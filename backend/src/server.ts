@@ -7,6 +7,7 @@ const app = express();
 
 const PORT = process.env.PORT || 5000;
 
+app.use(express.json());
 app.get("/", (_, res) => {
       res.send("I am working fine")
 })

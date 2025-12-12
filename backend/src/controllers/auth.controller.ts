@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 import { User } from "../models/user/User";
 import { signupSchema, loginSchema } from "../validations/auth.schema";
 import { generateToken } from "../utils/generateToken";
-import { error } from "console";
+
 
 export const signup = async (req: Request, res: Response) => {
   try {
@@ -14,7 +14,7 @@ export const signup = async (req: Request, res: Response) => {
         .json({ success: false, errors: parsed.error.flatten().fieldErrors });
     }
 
-    const { username, email, password } = parsed.data;
+    const {fullName, username, email, password } = parsed.data;
 
     const existingUser = await User.findOne({ $or: [{ email }, { username }] });
     if (existingUser) {
@@ -26,6 +26,7 @@ export const signup = async (req: Request, res: Response) => {
     const hashedPass = await bcrypt.hash(password, 10);
 
     const user = await User.create({
+      fullName,
       username,
       email,
       password: hashedPass,
@@ -39,7 +40,7 @@ export const signup = async (req: Request, res: Response) => {
       user: { id: user._id, username: user.username, email: user.email },
       token,
     });
-  } catch (err) {
+  } catch (error) {
     console.log("Error in signup", error);
     return res.status(500).json({ success: false, message: "Server error" });
   }
