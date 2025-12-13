@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 import { dbConnect } from './config/db';
 import authRoutes from './routes/auth.routes'
+import problemRoutes from './routes/problem.routes'
 const app = express();
 
 const PORT = process.env.PORT || 5000;
@@ -13,6 +14,7 @@ app.get("/", (_, res) => {
 })
 
 app.use("/api/auth", authRoutes)
+app.use("/api/problems", problemRoutes)
 
 app.listen(PORT, async() => {
     await dbConnect();
