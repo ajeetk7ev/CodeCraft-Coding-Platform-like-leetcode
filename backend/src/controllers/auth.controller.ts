@@ -46,6 +46,8 @@ export const signup = async (req: Request, res: Response) => {
   }
 };
 
+
+
 export const login = async (req: Request, res: Response) => {
   try {
     const parsed = loginSchema.safeParse(req.body);
@@ -71,8 +73,8 @@ export const login = async (req: Request, res: Response) => {
       user: { id: user._id, username: user.username, email: user.email },
       token,
     });
-  } catch (err) {
-    console.log("Error in login", err);
+  } catch (error) {
+    console.log("Error in login", error);
     return res.status(500).json({success:false, message: "Server error" });
   }
 };
