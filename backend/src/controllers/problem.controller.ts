@@ -115,6 +115,7 @@ export const createProblem = async (req: Request, res: Response) => {
       );
     }
 
+
     // Create problem testcases
     if (testcases && testcases.length > 0) {
       await ProblemTestcase.insertMany(
@@ -133,7 +134,8 @@ export const createProblem = async (req: Request, res: Response) => {
         boilerplates.map((boilerplate) => ({
           problem: problem._id,
           language: boilerplate.language,
-          template: boilerplate.template,
+          userCodeTemplate: boilerplate.userCodeTemplate,
+          fullCodeTemplate: boilerplate.fullCodeTemplate
         }))
       );
     }
@@ -422,7 +424,8 @@ export const updateProblem = async (req: Request, res: Response) => {
           updateData.boilerplates.map((boilerplate) => ({
             problem: id,
             language: boilerplate.language,
-            template: boilerplate.template,
+            userCodeTemplate: boilerplate.userCodeTemplate,
+            fullCodeTemplate: boilerplate.fullCodeTemplate
           }))
         );
       }

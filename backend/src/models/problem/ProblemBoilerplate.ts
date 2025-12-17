@@ -5,10 +5,10 @@ export interface IProblemBoilerplate extends Document {
   language: string;
 
   // Code shown to user (ONLY function)
-  userTemplate: string;
+  userCodeTemplate: string;
 
   // Hidden boilerplate (imports + main + test runner)
-  fullTemplate: string;
+  fullCodeTemplate: string;
 }
 
 const problemBoilerplateSchema = new Schema<IProblemBoilerplate>(
@@ -25,12 +25,12 @@ const problemBoilerplateSchema = new Schema<IProblemBoilerplate>(
       enum: ["cpp", "java", "python", "javascript"],
     },
 
-    userTemplate: {
+    userCodeTemplate: {
       type: String,
       required: true,
     },
 
-    fullTemplate: {
+    fullCodeTemplate: {
       type: String,
       required: true,
     },

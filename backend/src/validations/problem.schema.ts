@@ -17,7 +17,8 @@ const testcaseSchema = z.object({
 // Schema for boilerplates
 const boilerplateSchema = z.object({
   language: z.string().min(1, "Language is required"),
-  template: z.string().min(1, "Template is required"),
+  userCodeTemplate: z.string().min(1, "UserCodeTemplate is required"),
+  fullCodeTemplate: z.string().min(1, "FullCodeTemplate is required"),
 });
 
 export const createProblemSchema = z.object({
