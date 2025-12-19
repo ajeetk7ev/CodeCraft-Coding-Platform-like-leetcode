@@ -143,6 +143,14 @@ export const submitWorker = new Worker<SubmitJobData, void>(
   }
 );
 
+submitWorker.on("ready", () => {
+  console.log("🚀 Submit worker is ready");
+});
+
+submitWorker.on("error", (err) => {
+  console.error("❌ Submit worker error:", err);
+});
+
 submitWorker.on("completed", (job) => {
   console.log(`Submit job ${job.id} completed`);
 });

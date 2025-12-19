@@ -5,8 +5,12 @@
   "main": "index.js",
   "scripts": {
     "dev": "nodemon --watch src --ext ts --exec ts-node src/server.ts",
+    "dev:run-worker": "nodemon --watch src/workers --ext ts --exec ts-node src/workers/run.worker.ts",
+    "dev:submit-worker": "nodemon --watch src/workers --ext ts --exec ts-node src/workers/submit.worker.ts",
     "build": "tsc",
-    "start": "node dist/server.js"
+    "start": "node dist/server.js",
+    "start:run-worker": "node dist/workers/run.worker.js",
+    "start:submit-worker": "node dist/workers/submit.worker.js"
   },
   "keywords": [],
   "author": "",

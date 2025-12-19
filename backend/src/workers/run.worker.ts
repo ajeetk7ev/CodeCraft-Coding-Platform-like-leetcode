@@ -23,6 +23,7 @@ interface RunJobResult {
 export const runWorker = new Worker<RunJobData, RunJobResult>(
   "code-run",
   async (job: Job<RunJobData, RunJobResult>) => {
+    console.log("CODE RUN DATA", job.data);
     const { code, language, stdin, expectedOutput } = job.data;
 
     try {
@@ -55,6 +56,14 @@ export const runWorker = new Worker<RunJobData, RunJobResult>(
   }
 );
 
+runWorker.on("ready", () => {
+  console.log("🚀 Run worker is ready");
+});
+
+runWorker.on("error", (err) => {
+  console.error("❌ Run worker error:", err);
+});
+
 runWorker.on("completed", (job) => {
   console.log(`Run job ${job.id} completed`);
 });
@@ -62,4 +71,7 @@ runWorker.on("completed", (job) => {
 runWorker.on("failed", (job, err) => {
   console.error(`Run job ${job?.id} failed:`, err);
 });
+
+
+
 

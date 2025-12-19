@@ -3,7 +3,7 @@ import { SupportedLanguage } from "../models/submission/Language";
 import { Verdict } from "../models/submission/verdict";
 
 // Judge0 API configuration
-const JUDGE0_API_URL = process.env.JUDGE0_API_URL || "http://localhost:2358";
+const JUDGE0_API_URL = process.env.JUDGE0_API_URL;
 const JUDGE0_RAPIDAPI_KEY = process.env.JUDGE0_RAPIDAPI_KEY;
 const JUDGE0_RAPIDAPI_HOST = process.env.JUDGE0_RAPIDAPI_HOST;
 
@@ -91,7 +91,7 @@ export const submitToJudge0 = async (
     }
 
     const response = await axios.post<Judge0Response>(
-      `${JUDGE0_API_URL}/submissions`,
+     `${JUDGE0_API_URL}/submissions?base64_encoded=false&wait=false`,
       submission,
       { headers: getHeaders() }
     );
@@ -109,7 +109,7 @@ export const submitToJudge0 = async (
 export const getJudge0Result = async (token: string): Promise<Judge0Result> => {
   try {
     const response = await axios.get<Judge0Result>(
-      `${JUDGE0_API_URL}/submissions/${token}`,
+     `${JUDGE0_API_URL}/submissions/${token}?base64_encoded=false`,
       { headers: getHeaders() }
     );
 

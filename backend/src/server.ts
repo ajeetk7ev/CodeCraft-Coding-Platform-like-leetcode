@@ -5,8 +5,9 @@ import { dbConnect } from './config/db';
 import authRoutes from './routes/auth.routes'
 import problemRoutes from './routes/problem.routes'
 import submissionRoutes from './routes/submission.routes'
-import { runWorker } from './workers/run.worker';
-import { submitWorker } from './workers/submit.worker';
+import './workers/submit.worker';// Start the submit worker
+import './workers/run.worker'; // Start the run worker
+
 
 const app = express();
 
@@ -24,5 +25,4 @@ app.use("/api/submissions", submissionRoutes)
 app.listen(PORT, async() => {
     await dbConnect();
     console.log(`Server is running at port ${PORT}`)
-    console.log('Workers initialized')
 })
