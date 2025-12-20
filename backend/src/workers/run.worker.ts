@@ -23,7 +23,6 @@ interface RunJobResult {
 export const runWorker = new Worker<RunJobData, RunJobResult>(
   "code-run",
   async (job: Job<RunJobData, RunJobResult>) => {
-    console.log("CODE RUN DATA", job.data);
     const { code, language, stdin, expectedOutput } = job.data;
 
     try {

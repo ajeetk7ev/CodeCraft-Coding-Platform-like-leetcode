@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { QueueEvents } from "bullmq";
 import Submission from "../models/submission/Submission";
 import { Problem } from "../models/problem/Problem";
+import { ProblemBoilerplate } from "../models/problem/ProblemBoilerplate";
 import { runCodeSchema, submitCodeSchema } from "../validations/submission.schema";
 import { runQueue } from "../queue/run.queue";
 import { submitQueue } from "../queue/submit.queue";
@@ -80,6 +81,22 @@ export const submitCode = async (req: Request, res: Response) => {
       });
     }
 
+    // Get boilerplate for the problem and language
+    const boilerplate = await ProblemBoilerplate.findOne({
+      problem: problemId,
+      language,
+    });
+
+    // Combine user code with fullCodeTemplate
+    let fullCode = code;
+    if (boilerplate && boilerplate.fullCodeTemplate) {
+      // Replace userCodeTemplate in fullCodeTemplate with actual user code
+      fullCode = boilerplate.fullCodeTemplate.replace(
+        boilerplate.userCodeTemplate,
+        code
+      );
+    }
+
     // Create submission record
     const submission = await Submission.create({
       user: userId,
@@ -92,10 +109,10 @@ export const submitCode = async (req: Request, res: Response) => {
       testcaseResults: [],
     });
 
-    // Add job to submit queue
+    // Add job to submit queue with the full code
     await submitQueue.add("submit-code", {
       submissionId: String(submission._id),
-      code,
+      code: fullCode,
       language,
       problemId,
     });
