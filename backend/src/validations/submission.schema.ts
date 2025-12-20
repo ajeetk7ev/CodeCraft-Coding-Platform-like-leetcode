@@ -22,5 +22,4 @@ export const submitCodeSchema = z.object({
   ),
 
   problemId: z.string().min(1, "Problem ID is required"),
-  contestId: z.string().optional(),
 });

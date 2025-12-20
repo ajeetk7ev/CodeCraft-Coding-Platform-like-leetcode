@@ -69,7 +69,7 @@ export const submitCode = async (req: Request, res: Response) => {
       });
     }
 
-    const { code, language, problemId, contestId } = parsed.data;
+    const { code, language, problemId } = parsed.data;
     const userId = (req as any).user._id;
 
     // Verify problem exists
@@ -92,7 +92,7 @@ export const submitCode = async (req: Request, res: Response) => {
     if (boilerplate && boilerplate.fullCodeTemplate) {
       // Replace userCodeTemplate in fullCodeTemplate with actual user code
       fullCode = boilerplate.fullCodeTemplate.replace(
-        boilerplate.userCodeTemplate,
+        "{{USER_CODE}}",
         code
       );
     }
@@ -101,7 +101,6 @@ export const submitCode = async (req: Request, res: Response) => {
     const submission = await Submission.create({
       user: userId,
       problem: problemId,
-      contest: contestId || null,
       code,
       language,
       verdict: Verdict.COMPILE_ERROR,
@@ -145,7 +144,6 @@ export const getSubmission = async (req: Request, res: Response) => {
     const submission = await Submission.findById(id)
       .populate("user", "username email")
       .populate("problem", "title slug difficulty")
-      .populate("contest", "title");
 
     if (!submission) {
       return res.status(404).json({
