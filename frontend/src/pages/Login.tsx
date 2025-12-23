@@ -4,102 +4,62 @@ import AuthHeader from "@/components/core/auth/AuthHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import FormError from "@/components/common/FormError";
+import { inputClass } from "./Signup";
 import { useAuthStore } from "@/stores/authStore";
-import { LoaderCircle } from "lucide-react";
 import toast from "react-hot-toast";
+import { LoaderCircle } from "lucide-react";
 
-export const inputClass =
-  "bg-gray-900 text-gray-300 placeholder:text-gray-500 border-gray-700 focus:border-indigo-500 focus:ring-indigo-500";
-
-type SignupErrors = {
-  fullName?: string;
-  username?: string;
+type LoginErrors = {
   email?: string;
   password?: string;
 };
 
-export default function Signup() {
-  const { signup, authIsLoading } = useAuthStore();
+export default function Login() {
+  const { login, authIsLoading } = useAuthStore();
 
   const [form, setForm] = useState({
-    fullName: "",
-    username: "",
     email: "",
     password: "",
   });
 
-  const [errors, setErrors] = useState<SignupErrors>({});
+  const [errors, setErrors] = useState<LoginErrors>({});
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     setForm({ ...form, [e.target.name]: e.target.value });
-
-    // clear error while typing
-    setErrors((prev) => ({
-      ...prev,
-      [e.target.name]: undefined,
-    }));
+    setErrors((prev) => ({ ...prev, [e.target.name]: undefined }));
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setErrors({});
 
-    const res = await signup(
-      form.fullName,
-      form.username,
-      form.email,
-      form.password
-    );
+    const res = await login(form.email, form.password);
 
     if (!res.success) {
-       if(res.message){
-         toast.error(res.message);
-       }
+      if (res.message) {
+        toast.error(res.message);
+      }
       // Zod field errors
       if (res.errors) {
         const fieldErrors = res.errors;
         setErrors({
-          fullName: fieldErrors.fullName?.[0],
-          username: fieldErrors.username?.[0],
           email: fieldErrors.email?.[0],
           password: fieldErrors.password?.[0],
         });
       }
-    } else{
-      toast.success(res.message || "Login Successful")
+    } else {
+      toast.success(res.message || "Registered Successfully");
     }
   }
 
   return (
     <AuthLayout>
       <AuthHeader
-        title="Create your account"
-        subtitle="Start solving problems and track your progress"
+        title="Welcome back"
+        subtitle="Login to continue your coding journey"
       />
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <Input
-            name="fullName"
-            placeholder="Full Name"
-            value={form.fullName}
-            onChange={handleChange}
-            className={inputClass}
-          />
-          <FormError message={errors.fullName} />
-        </div>
-
-        <div>
-          <Input
-            name="username"
-            placeholder="Username"
-            value={form.username}
-            onChange={handleChange}
-            className={inputClass}
-          />
-          <FormError message={errors.username} />
-        </div>
-
         <div>
           <Input
             type="email"
@@ -131,10 +91,10 @@ export default function Signup() {
           {authIsLoading ? (
             <>
               <LoaderCircle className="h-4 w-4 animate-spin" />
-              Creating account...
+              Logging in...
             </>
           ) : (
-            "Create Account"
+            "Login"
           )}
         </Button>
       </form>
