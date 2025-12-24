@@ -9,12 +9,15 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
+import { useAuthStore } from "@/stores/authStore";
 
 export default function Navbar() {
+  const { token, user } = useAuthStore();
   const [open, setOpen] = useState(false);
   const location = useLocation();
 
-  // 🔥 Close sheet automatically on route change
   useEffect(() => {
     setOpen(false);
   }, [location.pathname]);
@@ -40,19 +43,28 @@ export default function Navbar() {
 
         {/* Desktop Auth */}
         <div className="hidden md:flex items-center gap-4">
-          <Link
-            to="/login"
-            className="px-4 py-2 rounded-md bg-gray-800 text-gray-300 hover:bg-gray-700 hover:text-white transition"
-          >
-            Login
-          </Link>
+          {!token && (
+            <Link
+              to="/login"
+              className="px-4 py-2 rounded-md bg-gray-800 text-gray-300 hover:bg-gray-700 hover:text-white transition"
+            >
+              Login
+            </Link>
+          )}
+
+          {token && (
+            <Avatar>
+              <AvatarImage src={user?.avatar || "https://github.com/shadcn.png"} />
+              <AvatarFallback>CN</AvatarFallback>
+            </Avatar>
+          )}
         </div>
 
         {/* Mobile Menu */}
         <div className="md:hidden">
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
-              <Button size="icon" >
+              <Button size="icon">
                 <Menu className="h-6 w-6 text-gray-300" />
               </Button>
             </SheetTrigger>
@@ -65,7 +77,7 @@ export default function Navbar() {
 
               {/* Mobile Nav */}
               <div className="mt-16 px-6">
-                <MobileNav closeSheet={() => setOpen(false)} />
+                <MobileNav closeSheet={() => setOpen(false)} token={token} />
               </div>
             </SheetContent>
           </Sheet>
@@ -91,7 +103,7 @@ function NavItem({ label, to }: { label: string; to: string }) {
 
 /* ---------------- Mobile Nav ---------------- */
 
-function MobileNav({ closeSheet }: { closeSheet: () => void }) {
+function MobileNav({ closeSheet, token }: { closeSheet: () => void, token:string | null }) {
   return (
     <div className="flex flex-col gap-6 mt-10">
       <MobileNavItem to="/problems" label="Problems" onClick={closeSheet} />
@@ -104,6 +116,7 @@ function MobileNav({ closeSheet }: { closeSheet: () => void }) {
       />
 
       <div className="pt-6 border-t border-gray-800">
+        {!token &&
         <Link
           to="/login"
           onClick={closeSheet}
@@ -111,6 +124,7 @@ function MobileNav({ closeSheet }: { closeSheet: () => void }) {
         >
           Login
         </Link>
+        }
       </div>
     </div>
   );
