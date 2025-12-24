@@ -56,9 +56,9 @@ export default function Signup() {
     );
 
     if (!res.success) {
-       if(res.message){
-         toast.error(res.message);
-       }
+      if (res.message) {
+        toast.error(res.message);
+      }
       // Zod field errors
       if (res.errors) {
         const fieldErrors = res.errors;
@@ -69,8 +69,10 @@ export default function Signup() {
           password: fieldErrors.password?.[0],
         });
       }
-    } else{
-      toast.success(res.message || "Login Successful")
+    } else {
+      toast.success(res.message || "Signup Successfully");
+      setForm({fullName:"", username:"", email:"", password:""});
+      navigate("/");
     }
   }
 
@@ -123,32 +125,31 @@ export default function Signup() {
         </div>
 
         <div>
-  <div className="relative">
-    <Input
-      type={showPassword ? "text" : "password"}
-      name="password"
-      placeholder="Password"
-      value={form.password}
-      onChange={handleChange}
-      className={`${inputClass} pr-10`}
-    />
+          <div className="relative">
+            <Input
+              type={showPassword ? "text" : "password"}
+              name="password"
+              placeholder="Password"
+              value={form.password}
+              onChange={handleChange}
+              className={`${inputClass} pr-10`}
+            />
 
-    <button
-      type="button"
-      onClick={() => setShowPassword((prev) => !prev)}
-      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200"
-    >
-      {showPassword ? (
-        <EyeOff className="h-4 w-4" />
-      ) : (
-        <Eye className="h-4 w-4" />
-      )}
-    </button>
-  </div>
+            <button
+              type="button"
+              onClick={() => setShowPassword((prev) => !prev)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200"
+            >
+              {showPassword ? (
+                <EyeOff className="h-4 w-4" />
+              ) : (
+                <Eye className="h-4 w-4" />
+              )}
+            </button>
+          </div>
 
-  <FormError message={errors.password} />
-</div>
-
+          <FormError message={errors.password} />
+        </div>
 
         <Button
           disabled={authIsLoading}
@@ -164,7 +165,14 @@ export default function Signup() {
           )}
         </Button>
       </form>
-      <p className="text-sm text-gray-400 mt-6 text-center"> Already have an account?{" "} <Link to={"/login"} className="text-indigo-400 hover:underline"> Log in </Link> </p>
+      <p className="text-sm text-gray-400 mt-6 text-center">
+        {" "}
+        Already have an account?{" "}
+        <Link to={"/login"} className="text-indigo-400 hover:underline">
+          {" "}
+          Log in{" "}
+        </Link>{" "}
+      </p>
     </AuthLayout>
   );
 }

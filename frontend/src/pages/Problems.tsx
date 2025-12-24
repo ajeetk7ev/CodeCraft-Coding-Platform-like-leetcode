@@ -5,49 +5,57 @@ import ProblemHeaderSkeleton from "@/components/core/problems/ProblemSkeleton";
 import ProblemTableSkeleton from "@/components/core/problems/ProblemTableSkeleton";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/stores/authStore";
+import axios from "axios";
+import { API_URL } from "@/utils/api";
 
 export default function Problems() {
+  const navigate = useNavigate();
+  const { token } = useAuthStore();
+
   const [loading, setLoading] = useState(true);
   const [problems, setProblems] = useState<any[]>([]);
 
-  const { token } = useAuthStore();
+  // pagination state
+  const [page, setPage] = useState(1);
+  const [limit] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
 
-  const navigate = useNavigate();
-
-  if (!token) {
-    navigate("/login");
-  }
-
+  /* ---------------- AUTH GUARD ---------------- */
   useEffect(() => {
-    setTimeout(() => {
-      setProblems([
-        {
-          _id: "6946ea5ca4538da0d5a82887",
-          title: "Print Input String",
-          slug: "print-input-string",
-          difficulty: "easy",
-          createdBy: { username: "ajeetk20" },
-        },
-        {
-          _id: "6942cbd3754305dd93f0c1fb",
-          title: "Valid Parentheses",
-          slug: "valid-parentheses",
-          difficulty: "easy",
-          createdBy: { username: "ajeetk20" },
-        },
-        {
-          _id: "6942cba9754305dd93f0c1de",
-          title: "Reverse Integer",
-          slug: "reverse-integer",
-          difficulty: "medium",
-          createdBy: { username: "ajeetk20" },
-        },
-      ]);
+    if (!token) {
+      navigate("/login");
+    }
+  }, [token, navigate]);
 
-      setLoading(false);
-    }, 1500);
-  }, []);
+  /* ---------------- FETCH PROBLEMS ---------------- */
+  useEffect(() => {
+    const fetchProblems = async () => {
+      setLoading(true);
+      try {
+        const res = await axios.get(
+          `${API_URL}/problems?page=${page}&limit=${limit}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
 
+        if (res.data.success) {
+          setProblems(res.data.data);
+          setTotalPages(res.data.pagination.pages);
+        }
+      } catch (error) {
+        console.error("Failed to fetch problems", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (token) fetchProblems();
+  }, [page, limit, token]);
+
+  /* ---------------- RENDER ---------------- */
   return (
     <div className="bg-gray-950 min-h-screen text-gray-100">
       <div className="max-w-5xl mx-auto px-6 py-10">
@@ -59,7 +67,30 @@ export default function Problems() {
         ) : (
           <>
             <ProblemHeader />
-            <ProblemTable data={problems} />
+            <ProblemTable data={problems} page={page} />
+
+            {/* Pagination */}
+            <div className="flex justify-center gap-3 mt-6">
+              <button
+                disabled={page === 1}
+                onClick={() => setPage((p) => p - 1)}
+                className="px-4 py-2 rounded bg-gray-800 disabled:opacity-50"
+              >
+                Prev
+              </button>
+
+              <span className="px-4 py-2 text-sm text-gray-400">
+                Page {page} of {totalPages}
+              </span>
+
+              <button
+                disabled={page === totalPages}
+                onClick={() => setPage((p) => p + 1)}
+                className="px-4 py-2 rounded bg-gray-800 disabled:opacity-50"
+              >
+                Next
+              </button>
+            </div>
           </>
         )}
       </div>

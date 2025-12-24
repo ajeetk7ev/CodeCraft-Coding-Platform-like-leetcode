@@ -11,7 +11,7 @@ type Problem = {
   };
 };
 
-export default function ProblemTable({ data }: { data: Problem[] }) {
+export default function ProblemTable({ data, page }: { data: Problem[], page:number }) {
   return (
     <div className="mt-6 overflow-x-auto rounded-xl border border-gray-800">
       <table className="w-full text-sm text-left">
@@ -36,7 +36,7 @@ export default function ProblemTable({ data }: { data: Problem[] }) {
                   to={`/problems/${problem.slug}`}
                   className="text-indigo-400 hover:underline font-medium"
                 >
-                 {index+1}. {problem.title}
+                 {10*(page-1)+index+1}. {problem.title}
                 </Link>
               </td>
 

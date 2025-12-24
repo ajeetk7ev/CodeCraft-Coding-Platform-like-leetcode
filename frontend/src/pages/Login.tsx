@@ -53,6 +53,8 @@ export default function Login() {
       }
     } else {
       toast.success(res.message || "Registered Successfully");
+      setForm({email:"", password:""});
+      navigate("/");
     }
   }
 
@@ -82,17 +84,7 @@ export default function Login() {
           <FormError message={errors.email} />
         </div>
 
-        <div>
-          <Input
-            type="password"
-            name="password"
-            placeholder="Password"
-            value={form.password}
-            onChange={handleChange}
-            className={inputClass}
-          />
-          <FormError message={errors.password} />
-        </div>
+      
 
         <div>
           <div className="relative">
