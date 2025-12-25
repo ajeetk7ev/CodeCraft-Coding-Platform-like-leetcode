@@ -248,13 +248,9 @@ export const getProblems = async (req: Request, res: Response) => {
 // READ ONE - Get a single problem by ID or slug with all related data
 export const getProblem = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
-    const isAdmin = (req as any).user?.role === "admin";
+    const { slug } = req.params;
 
-    // Try to find by ID first, then by slug
-    const problem = await Problem.findOne({
-      $or: [{ _id: id }, { slug: id }],
-    });
+    const problem = await Problem.findOne({slug}).populate("createdBy", "username email");
 
     if (!problem) {
       return res.status(404).json({
@@ -263,56 +259,53 @@ export const getProblem = async (req: Request, res: Response) => {
       });
     }
 
-    // Populate createdBy
-    await problem.populate("createdBy", "username email");
+    const [
+      description,
+      examples,
+      testcases, // ✅ already filtered
+      boilerplates,
+      tags,
+      companyTags,
+      stats,
+    ] = await Promise.all([
+      ProblemDescription.findOne({ problem: problem._id }).select("-__v"),
+      ProblemExample.find({ problem: problem._id }).select("-__v -problem"),
 
-    // Get all related data
-    const [description, examples, allTestcases, boilerplates, tags, companyTags, stats] =
-      await Promise.all([
-        ProblemDescription.findOne({ problem: problem._id }).select("-__v"),
-        ProblemExample.find({ problem: problem._id }).select("-__v -problem"),
-        ProblemTestcase.find({ problem: problem._id }).select("-__v -problem"),
-        ProblemBoilerplate.find({ problem: problem._id }).select("-__v -problem"),
-        ProblemTag.find({ problem: problem._id }).select("-__v -problem"),
-        ProblemCompanyTag.find({ problem: problem._id }).select("-__v -problem"),
-        ProblemStats.findOne({ problem: problem._id }).select("-__v -problem"),
-      ]);
+      // ✅ ONLY visible testcases
+      ProblemTestcase.find({
+        problem: problem._id,
+        isHidden: false,
+      }).select("-__v -problem"),
 
-    // Filter testcases based on admin status
-    const testcases = isAdmin
-      ? allTestcases
-      : allTestcases.map((tc) => ({
-          _id: tc._id,
-          isHidden: tc.isHidden,
-          // Don't expose input/output for hidden testcases to non-admins
-          input: tc.isHidden ? undefined : tc.input,
-          output: tc.isHidden ? undefined : tc.output,
-        }));
-
-    const problemData = {
-      ...problem.toObject(),
-      description: description?.description || "",
-      constraints: description?.constraints || [],
-      examples: examples || [],
-      testcases: testcases || [],
-      boilerplates: boilerplates || [],
-      tags: tags.map((t) => t.tag) || [],
-      companyTags: companyTags.map((ct) => ct.company) || [],
-      stats: stats || { totalSubmissions: 0, acceptedSubmissions: 0 },
-    };
+      ProblemBoilerplate.find({ problem: problem._id }).select("-__v -problem"),
+      ProblemTag.find({ problem: problem._id }).select("-__v -problem"),
+      ProblemCompanyTag.find({ problem: problem._id }).select("-__v -problem"),
+      ProblemStats.findOne({ problem: problem._id }).select("-__v -problem"),
+    ]);
 
     return res.json({
       success: true,
-      data: problemData,
+      data: {
+        ...problem.toObject(),
+        description: description?.description || "",
+        constraints: description?.constraints || [],
+        examples: examples || [],
+        testcases: testcases || [],
+        boilerplates: boilerplates || [],
+        tags: tags.map((t) => t.tag),
+        companyTags: companyTags.map((ct) => ct.company),
+        stats: stats || { totalSubmissions: 0, acceptedSubmissions: 0 },
+      },
     });
   } catch (error) {
-    console.log("Error in getProblem", error);
+    console.error("Error in getProblem", error);
     return res.status(500).json({
       success: false,
       message: "Server error",
     });
   }
 };
+
 
 // UPDATE - Update a problem and all related data
 export const updateProblem = async (req: Request, res: Response) => {
