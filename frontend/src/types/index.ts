@@ -11,6 +11,5 @@ export interface User{
   linkedin?: string;
   avatar?: string;
   bio?: string;
-
   role: "user" | "admin";
 }

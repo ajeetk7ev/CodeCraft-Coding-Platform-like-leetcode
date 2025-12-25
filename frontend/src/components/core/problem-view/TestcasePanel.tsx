@@ -6,6 +6,10 @@ type Testcase = {
   output?: string;
 };
 
+type Example = {
+  input: string;
+};
+
 type ParsedInput = {
   key: string;
   value: string;
@@ -17,63 +21,77 @@ type UITestcase = {
   isCustom: boolean;
 };
 
-/* ---------------- Helper: Parse input string ---------------- */
-function parseInput(input = ""): ParsedInput[] {
-  return input
+/* ---------- helpers ---------- */
+
+// Extract keys from example input
+function extractKeys(exampleInput = ""): string[] {
+  return exampleInput
     .split(",")
-    .map((part) => part.trim())
-    .map((part) => {
-      const [key, value] = part.split("=").map((s) => s.trim());
-      return { key, value };
-    });
+    .map((p) => p.split("=")[0].trim());
 }
 
-/* ---------------- Helper: Convert inputs back to string ---------------- */
-function stringifyInput(inputs: ParsedInput[]) {
-  return inputs.map((i) => `${i.key} = ${i.value}`).join(", ");
+// Combine example keys + testcase values
+function buildInputs(exampleInput: string, testcaseInput = ""): ParsedInput[] {
+  const keys = extractKeys(exampleInput);
+
+  if (keys.length === 1) {
+    return [{ key: keys[0], value: testcaseInput }];
+  }
+
+  const values = testcaseInput.split(",").map((v) => v.trim());
+
+  return keys.map((key, i) => ({
+    key,
+    value: values[i] ?? "",
+  }));
 }
 
 export default function TestcasePanel({
   testcases,
+  examples,
 }: {
   testcases: Testcase[];
+  examples: Example[];
 }) {
-  const backendCases = testcases.filter((t) => !t.isHidden);
-
   const [activeTab, setActiveTab] = useState<"testcase" | "result">("testcase");
   const [activeCase, setActiveCase] = useState(0);
   const [uiCases, setUiCases] = useState<UITestcase[]>([]);
 
-  /* ---------------- Init UI cases from backend ---------------- */
+
+
+  /* ---------- init from backend ---------- */
   useEffect(() => {
-    const initialCases: UITestcase[] = backendCases.map((tc, idx) => ({
+    const baseExample = examples?.[0]?.input ?? "x";
+
+    const initialCases = testcases.map((tc, idx) => ({
       id: `backend-${idx}`,
-      inputs: parseInput(tc.input),
+      inputs: buildInputs(baseExample, tc.input),
       isCustom: false,
     }));
+
     setUiCases(initialCases);
-  }, [testcases]);
+    setActiveCase(0);
+  }, [testcases, examples]);
 
   const currentCase = uiCases[activeCase];
 
-  /* ---------------- Add Custom Case ---------------- */
+  /* ---------- add custom ---------- */
   function addCustomCase() {
-    const baseInputs =
-      backendCases[0]?.input
-        ? parseInput(backendCases[0].input)
-        : [{ key: "x", value: "" }];
+    if (!uiCases[0]) return;
 
-    const newCase: UITestcase = {
-      id: `custom-${Date.now()}`,
-      inputs: baseInputs,
-      isCustom: true,
-    };
+    setUiCases((prev) => [
+      ...prev,
+      {
+        id: `custom-${Date.now()}`,
+        inputs: prev[0].inputs.map((i) => ({ ...i, value: "" })),
+        isCustom: true,
+      },
+    ]);
 
-    setUiCases((prev) => [...prev, newCase]);
     setActiveCase(uiCases.length);
   }
 
-  /* ---------------- Remove Case ---------------- */
+  /* ---------- remove ---------- */
   function removeCase(index: number) {
     if (!uiCases[index]?.isCustom) return;
 
@@ -82,25 +100,26 @@ export default function TestcasePanel({
     setActiveCase(Math.max(0, index - 1));
   }
 
-  /* ---------------- Reset Case ---------------- */
+  /* ---------- reset ---------- */
   function resetCase() {
     if (!currentCase || currentCase.isCustom) return;
 
-    const original = backendCases[activeCase]?.input;
-    if (!original) return;
+    const baseExample = examples?.[0]?.input ?? "x";
+    const originalInput = testcases[activeCase]?.input ?? "";
 
     const updated = [...uiCases];
     updated[activeCase] = {
       ...updated[activeCase],
-      inputs: parseInput(original),
+      inputs: buildInputs(baseExample, originalInput),
     };
+
     setUiCases(updated);
   }
 
   return (
     <div className="h-64 bg-gray-900 border-t border-gray-800 text-sm flex flex-col">
-      {/* Top Tabs */}
-      <div className="flex items-center gap-6 px-4 pt-3 border-b border-gray-800">
+      {/* Tabs */}
+      <div className="flex gap-6 px-4 pt-3 border-b border-gray-800">
         {["testcase", "result"].map((tab) => (
           <button
             key={tab}
@@ -118,13 +137,13 @@ export default function TestcasePanel({
 
       {activeTab === "testcase" && (
         <>
-          {/* Case Tabs */}
-          <div className="flex items-center gap-2 px-4 py-3">
+          {/* Case buttons */}
+          <div className="flex gap-2 px-4 py-3">
             {uiCases.map((tc, idx) => (
               <div key={tc.id} className="flex items-center gap-1">
                 <button
                   onClick={() => setActiveCase(idx)}
-                  className={`px-3 py-1 rounded-md text-sm ${
+                  className={`px-3 py-1 rounded-md ${
                     activeCase === idx
                       ? "bg-gray-700 text-white"
                       : "text-gray-400 hover:bg-gray-800"
@@ -156,9 +175,7 @@ export default function TestcasePanel({
           <div className="flex-1 overflow-y-auto px-4 space-y-4 pb-4">
             {currentCase?.inputs.map((input, idx) => (
               <div key={idx}>
-                <div className="text-gray-400 mb-1">
-                  {input.key} =
-                </div>
+                <div className="text-gray-400 mb-1">{input.key} =</div>
                 <input
                   value={input.value}
                   onChange={(e) => {
@@ -171,21 +188,18 @@ export default function TestcasePanel({
               </div>
             ))}
 
-            {/* Footer */}
-            <div className="flex items-center justify-between text-xs text-gray-500 pt-2">
-              <span>{"</>"} Source</span>
-
-              {!currentCase?.isCustom && (
-                <button onClick={resetCase} className="hover:underline">
-                  Reset Testcase
-                </button>
-              )}
-            </div>
+            {!currentCase?.isCustom && (
+              <button
+                onClick={resetCase}
+                className="text-xs text-gray-500 hover:underline"
+              >
+                Reset Testcase
+              </button>
+            )}
           </div>
         </>
       )}
 
-      {/* Result Tab */}
       {activeTab === "result" && (
         <div className="flex-1 flex items-center justify-center text-gray-400">
           You must run your code first

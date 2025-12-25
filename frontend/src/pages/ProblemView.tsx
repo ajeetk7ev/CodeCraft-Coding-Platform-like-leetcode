@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import ProblemDescription from "@/components/core/problem-view/ProblemDescription";
 import CodePanel from "@/components/core/problem-view/CodePanel";
 import TestcasePanel from "@/components/core/problem-view/TestcasePanel";
+import { useParams } from "react-router-dom";
 
 const mockProblem = {
   title: "Reverse Integer",
@@ -10,9 +11,19 @@ const mockProblem = {
     "Given a signed 32-bit integer x, return x with its digits reversed.",
   constraints: ["-2^31 <= x <= 2^31 - 1"],
   examples: [
-    { input: "x = 123", output: "321", explanation: "Reverse digits" },
-    { input: "x = 121", output: "121", explanation: "Palindrome" },
-    { input: "x = 435", output: "534", explanation: "Reverse digits" },
+    { input: "nums = 123", output: "321", explanation: "Reverse digits" },
+    { input: "nums = 121", output: "121", explanation: "Palindrome" },
+    { input: "nums = 435", output: "534", explanation: "Reverse digits" },
+  ],
+  testcases: [
+    {
+      _id: "6942cba9754305dd93f0c1e4",
+      input: "123",
+      output: "321",
+      isHidden: false,
+      createdAt: "2025-12-17T15:26:33.518Z",
+      updatedAt: "2025-12-17T15:26:33.518Z",
+    },
   ],
   boilerplates: [
     {
@@ -30,6 +41,8 @@ public:
 };
 
 export default function ProblemView() {
+  const { slug } = useParams();
+  console.log("params", slug);
   const rootRef = useRef<HTMLDivElement>(null);
   const rightRef = useRef<HTMLDivElement>(null);
   const verticalAreaRef = useRef<HTMLDivElement>(null);
@@ -88,10 +101,7 @@ export default function ProblemView() {
   };
 
   return (
-    <div
-      ref={rootRef}
-      className="fixed inset-0 flex bg-gray-950 text-gray-100"
-    >
+    <div ref={rootRef} className="fixed inset-0 flex bg-gray-950 text-gray-100">
       {/* LEFT PANEL */}
       <div
         className="border-r border-gray-800 overflow-hidden"
@@ -123,7 +133,10 @@ export default function ProblemView() {
 
           {/* TESTCASE PANEL */}
           <div className="flex-1 overflow-y-auto bg-gray-900 z-40">
-            <TestcasePanel testcases={mockProblem.examples} />
+            <TestcasePanel
+              testcases={mockProblem.testcases}
+              examples={mockProblem.examples}
+            />
           </div>
         </div>
       </div>
