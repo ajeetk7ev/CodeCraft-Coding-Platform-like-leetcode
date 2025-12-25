@@ -249,8 +249,9 @@ export const getProblems = async (req: Request, res: Response) => {
 export const getProblem = async (req: Request, res: Response) => {
   try {
     const { slug } = req.params;
+    const user = (req as any).user;
 
-    const problem = await Problem.findOne({slug}).populate("createdBy", "username email");
+    const problem = await Problem.findOne({slug}).select("-__v -createdAt -updatedAt -createdBy");
 
     if (!problem) {
       return res.status(404).json({
@@ -266,21 +267,20 @@ export const getProblem = async (req: Request, res: Response) => {
       boilerplates,
       tags,
       companyTags,
-      stats,
+     
     ] = await Promise.all([
       ProblemDescription.findOne({ problem: problem._id }).select("-__v"),
-      ProblemExample.find({ problem: problem._id }).select("-__v -problem"),
+      ProblemExample.find({ problem: problem._id }).select("-__v -problem -createdAt -updatedAt"),
 
       // ✅ ONLY visible testcases
       ProblemTestcase.find({
         problem: problem._id,
         isHidden: false,
-      }).select("-__v -problem"),
+      }).select("-__v -problem -createdAt -updatedAt -isHidden"),
 
-      ProblemBoilerplate.find({ problem: problem._id }).select("-__v -problem"),
+      ProblemBoilerplate.find({ problem: problem._id }).select("-__v -problem -fullCodeTemplate -createdAt -updatedAt"),
       ProblemTag.find({ problem: problem._id }).select("-__v -problem"),
       ProblemCompanyTag.find({ problem: problem._id }).select("-__v -problem"),
-      ProblemStats.findOne({ problem: problem._id }).select("-__v -problem"),
     ]);
 
     return res.json({
@@ -294,7 +294,6 @@ export const getProblem = async (req: Request, res: Response) => {
         boilerplates: boilerplates || [],
         tags: tags.map((t) => t.tag),
         companyTags: companyTags.map((ct) => ct.company),
-        stats: stats || { totalSubmissions: 0, acceptedSubmissions: 0 },
       },
     });
   } catch (error) {
