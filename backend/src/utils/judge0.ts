@@ -51,8 +51,8 @@ const getHeaders = () => {
   };
 
   if (JUDGE0_RAPIDAPI_KEY && JUDGE0_RAPIDAPI_HOST) {
-    headers["X-RapidAPI-Key"] = JUDGE0_RAPIDAPI_KEY;
-    headers["X-RapidAPI-Host"] = JUDGE0_RAPIDAPI_HOST;
+    headers["x-rapidapi-key"] = JUDGE0_RAPIDAPI_KEY;
+    headers["x-rapidapi-host"] = JUDGE0_RAPIDAPI_HOST;
   }
 
   return headers;
@@ -91,7 +91,7 @@ export const submitToJudge0 = async (
     }
 
     const response = await axios.post<Judge0Response>(
-     `${JUDGE0_API_URL}/submissions?base64_encoded=false&wait=false`,
+      `${JUDGE0_API_URL}/submissions?base64_encoded=false&wait=false`,
       submission,
       { headers: getHeaders() }
     );
@@ -109,7 +109,7 @@ export const submitToJudge0 = async (
 export const getJudge0Result = async (token: string): Promise<Judge0Result> => {
   try {
     const response = await axios.get<Judge0Result>(
-     `${JUDGE0_API_URL}/submissions/${token}?base64_encoded=false`,
+      `${JUDGE0_API_URL}/submissions/${token}?base64_encoded=false`,
       { headers: getHeaders() }
     );
 
@@ -185,4 +185,3 @@ export const mapJudge0StatusToVerdict = (statusId: number): Verdict => {
       return Verdict.INTERNAL_ERROR;
   }
 };
-

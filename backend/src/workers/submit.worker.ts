@@ -139,7 +139,7 @@ export const submitWorker = new Worker<SubmitJobData, void>(
   },
   {
     connection: redis,
-    concurrency: 3, // Process up to 3 submissions concurrently
+    concurrency: 1, 
   }
 );
 

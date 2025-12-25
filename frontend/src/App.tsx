@@ -3,6 +3,7 @@ import Home from "./pages/Home"
 import Signup from "./pages/Signup"
 import Login from "./pages/Login"
 import Problems from "./pages/Problems"
+import ProblemView from "./pages/ProblemView"
 
 
 function App() {
@@ -13,6 +14,7 @@ function App() {
       <Route path="/signup" element={<Signup/>} />
       <Route path="/login" element={<Login/>} />
       <Route path="/problems" element={<Problems/>}/>
+      <Route path="/problems/view" element={<ProblemView/>}/>
    </Routes>
    </div>
   )

@@ -23,30 +23,24 @@ export const runCode = async (req: Request, res: Response) => {
       });
     }
 
-    const { code, language, stdin, expectedOutput } = parsed.data;
+    const { code, language, testcases } = parsed.data;
 
-    // Add job to run queue
+    // push ONE job with multiple testcases
     const job = await runQueue.add("run-code", {
       code,
       language,
-      stdin,
-      expectedOutput,
+      testcases,
     });
 
-    // Wait for job to complete (with timeout)
     const queueEvents = new QueueEvents("code-run", { connection: redis });
-    const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error("Job timeout")), 30000)
-    );
-    const result = await Promise.race([
-      job.waitUntilFinished(queueEvents),
-      timeoutPromise
-    ]) as any;
+
+    const result = (await job.waitUntilFinished(queueEvents)) as any;
 
     return res.json({
       success: true,
-      data: result,
+      data: result, // array of testcase results
     });
+
   } catch (error: any) {
     console.error("Error in runCode:", error);
     return res.status(500).json({
@@ -55,6 +49,7 @@ export const runCode = async (req: Request, res: Response) => {
     });
   }
 };
+
 
 /**
  * Submit code for a problem
