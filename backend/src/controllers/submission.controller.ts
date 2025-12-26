@@ -23,11 +23,35 @@ export const runCode = async (req: Request, res: Response) => {
       });
     }
 
-    const { code, language, testcases } = parsed.data;
+    const {slug, code, language, testcases } = parsed.data;
 
-    // push ONE job with multiple testcases
+     const problem = await Problem.findOne({slug});
+    if (!problem) {
+      return res.status(404).json({
+        success: false,
+        message: "Problem not found",
+      });
+    }
+
+    // Get boilerplate for the problem and language
+    const boilerplate = await ProblemBoilerplate.findOne({
+      problem: problem._id,
+      language,
+    });
+
+    // Combine user code with fullCodeTemplate
+    let fullCode = code;
+    if (boilerplate && boilerplate.fullCodeTemplate) {
+      // Replace userCodeTemplate in fullCodeTemplate with actual user code
+      fullCode = boilerplate.fullCodeTemplate.replace(
+        "{{USER_CODE}}",
+        code
+      );
+    }
+  
+    // // push ONE job with multiple testcases
     const job = await runQueue.add("run-code", {
-      code,
+      code:fullCode,
       language,
       testcases,
     });

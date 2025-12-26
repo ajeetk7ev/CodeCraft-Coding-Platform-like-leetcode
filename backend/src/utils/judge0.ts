@@ -44,6 +44,13 @@ interface Judge0Result {
   exit_signal?: number;
 }
 
+// ---------- helpers ----------
+const encodeBase64 = (value?: string) =>
+  value ? Buffer.from(value, "utf-8").toString("base64") : undefined;
+
+const decodeBase64 = (value?: string | null) =>
+  value ? Buffer.from(value, "base64").toString("utf-8") : null;
+
 // Create headers for Judge0 API
 const getHeaders = () => {
   const headers: Record<string, string> = {
@@ -71,27 +78,28 @@ export const submitToJudge0 = async (
 ): Promise<string> => {
   try {
     const languageId = LANGUAGE_ID_MAP[language];
+    console.log("language id", languageId);
     if (!languageId) {
       throw new Error(`Unsupported language: ${language}`);
     }
 
     const submission: Judge0Submission = {
-      source_code: code,
+      source_code: encodeBase64(code)!,
       language_id: languageId,
       cpu_time_limit: cpuTimeLimit,
       memory_limit: memoryLimit,
     };
 
     if (stdin) {
-      submission.stdin = stdin;
+      submission.stdin = encodeBase64(stdin)!;
     }
 
     if (expectedOutput) {
-      submission.expected_output = expectedOutput;
+      submission.expected_output = encodeBase64(expectedOutput)!;
     }
 
     const response = await axios.post<Judge0Response>(
-      `${JUDGE0_API_URL}/submissions?base64_encoded=false&wait=false`,
+      `${JUDGE0_API_URL}/submissions?base64_encoded=true&wait=false`,
       submission,
       { headers: getHeaders() }
     );
@@ -109,11 +117,17 @@ export const submitToJudge0 = async (
 export const getJudge0Result = async (token: string): Promise<Judge0Result> => {
   try {
     const response = await axios.get<Judge0Result>(
-      `${JUDGE0_API_URL}/submissions/${token}?base64_encoded=false`,
+      `${JUDGE0_API_URL}/submissions/${token}?base64_encoded=true`,
       { headers: getHeaders() }
     );
 
-    return response.data;
+    return {
+      ...response.data,
+      stdout: decodeBase64(response.data.stdout),
+      stderr: decodeBase64(response.data.stderr),
+      compile_output: decodeBase64(response.data.compile_output),
+      message: decodeBase64(response.data.message),
+    };
   } catch (error: any) {
     console.error("Error fetching Judge0 result:", error);
     throw new Error(`Failed to fetch result from Judge0: ${error.message}`);
