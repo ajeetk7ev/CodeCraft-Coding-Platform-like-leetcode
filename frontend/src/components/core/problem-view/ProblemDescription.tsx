@@ -1,25 +1,15 @@
+import type { Problem } from "@/types";
 import DifficultyBadge from "./DifficultyBadge";
 import ProblemTabs from "./ProblemTabs";
 
-type Problem = {
-  title: string;
-  difficulty: string;
-  description: string;
-  constraints: string[];
-  examples: {
-    input: string;
-    output: string;
-    explanation: string;
-  }[];
-  tags: string[];
-  companyTags: string[];
-};
+
 
 export default function ProblemDescription({
   problem,
 }: {
   problem: Problem;
 }) {
+  console.log("Problem is ", problem)
   return (
     <div className="h-full overflow-y-auto p-6">
       <ProblemTabs />
