@@ -11,12 +11,14 @@ const LANGUAGES = [
 interface Props {
   language: string;
   onLanguageChange: (lang: string) => void;
+  onRun: () => void;
+  onSubmit: () => void;
+  loading: boolean;
 }
 
-function CodePanelHeader({ language, onLanguageChange }: Props) {
+function CodePanelHeader({ language, onLanguageChange, onRun , onSubmit, loading }: Props) {
   return (
     <div className="flex justify-between items-center px-4 py-2 bg-gray-900 border-b border-gray-800">
-      
       {/* Language Selector */}
       <div className="relative">
         <select
@@ -49,14 +51,18 @@ function CodePanelHeader({ language, onLanguageChange }: Props) {
         <Button
           size="sm"
           variant="ghost"
+          disabled={loading}
+          onClick={onRun}
           className="flex items-center gap-1.5 text-green-400 hover:bg-green-500/10"
         >
           <Play className="h-4 w-4" />
-          Run
+          {loading ? "Running..." : "Run"}
         </Button>
 
         <Button
           size="sm"
+          disabled={loading}
+          onClick={onSubmit}
           className="flex items-center gap-1.5 bg-green-600 hover:bg-green-700 text-white"
         >
           <Upload className="h-4 w-4" />

@@ -6,143 +6,132 @@ import CodePanel from "@/components/core/problem-view/CodePanel";
 import TestcasePanel from "@/components/core/problem-view/TestcasePanel";
 
 import { useProblemStore } from "@/stores/problemStore";
+import { useSubmissionStore } from "@/stores/submissionStoret";
+
+type RunTestcase = {
+  stdin: string;
+  expectedOutput: string;
+};
 
 export default function ProblemView() {
-  const { slug } = useParams<{ slug: string }>();
+  const { slug } = useParams<{ slug: string}>();
 
-  const {
-    problem,
-    loading,
-    error,
-    fetchProblemBySlug,
-    clearProblem,
-  } = useProblemStore();
+  if(!slug){
+    return null;
+  }
+  
+
+  const { problem, loading, error, fetchProblemBySlug, clearProblem } =
+    useProblemStore();
+
+  const { runCode, submitCode, result, loading: running } =
+    useSubmissionStore();
 
   const rootRef = useRef<HTMLDivElement>(null);
-  const rightRef = useRef<HTMLDivElement>(null);
   const verticalAreaRef = useRef<HTMLDivElement>(null);
 
-  const [leftWidth, setLeftWidth] = useState(45); // %
-  const [editorHeight, setEditorHeight] = useState(65); // %
+  const [leftWidth, setLeftWidth] = useState(45);
+  const [editorHeight, setEditorHeight] = useState(65);
+  const [runTestcases, setRunTestcases] = useState<RunTestcase[]>([]);
 
-  /* ---------------- Fetch problem by slug ---------------- */
+
+  /* -------- fetch problem -------- */
   useEffect(() => {
-    if (slug) {
-      fetchProblemBySlug(slug);
-    }
+    if (slug) fetchProblemBySlug(slug);
+    return () => clearProblem();
+  }, [slug]);
 
-    return () => {
-      clearProblem(); // cleanup on unmount / slug change
-    };
-  }, [slug, fetchProblemBySlug, clearProblem]);
+  /* -------- init testcases -------- */
+  useEffect(() => {
+    if (!problem) return;
+    console.log(problem.testcases);
+    setRunTestcases(
+      problem.testcases.map((t) => ({
+        stdin: t.input,
+        expectedOutput: t.output,
+      }))
+    );
 
-  /* ---------------- Vertical Drag (LEFT ↔ RIGHT) ---------------- */
+  }, [problem]);
+
+  /* -------- layout drag -------- */
   const onVerticalMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
-    document.body.style.userSelect = "none";
-
     const startX = e.clientX;
     const startWidth = leftWidth;
-    const containerWidth = rootRef.current!.offsetWidth;
+    const width = rootRef.current!.offsetWidth;
 
-    const onMouseMove = (ev: MouseEvent) => {
-      const deltaX = ev.clientX - startX;
-      const next = startWidth + (deltaX / containerWidth) * 100;
-      setLeftWidth(Math.min(70, Math.max(25, next)));
-    };
+    const move = (ev: MouseEvent) =>
+      setLeftWidth(
+        Math.min(70, Math.max(25, startWidth + ((ev.clientX - startX) / width) * 100))
+      );
 
-    const onMouseUp = () => {
-      document.body.style.userSelect = "";
-      document.removeEventListener("mousemove", onMouseMove);
-      document.removeEventListener("mouseup", onMouseUp);
-    };
-
-    document.addEventListener("mousemove", onMouseMove);
-    document.addEventListener("mouseup", onMouseUp);
+    document.addEventListener("mousemove", move);
+    document.addEventListener("mouseup", () =>
+      document.removeEventListener("mousemove", move),
+      { once: true }
+    );
   };
 
-  /* ---------------- Horizontal Drag (EDITOR ↕ TESTCASE) ---------------- */
   const onHorizontalMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
-    document.body.style.userSelect = "none";
-
     const startY = e.clientY;
     const startHeight = editorHeight;
-    const containerHeight = verticalAreaRef.current!.offsetHeight;
+    const height = verticalAreaRef.current!.offsetHeight;
 
-    const onMouseMove = (ev: MouseEvent) => {
-      const deltaY = ev.clientY - startY;
-      const next = startHeight + (deltaY / containerHeight) * 100;
-      setEditorHeight(Math.min(80, Math.max(35, next)));
-    };
+    const move = (ev: MouseEvent) =>
+      setEditorHeight(
+        Math.min(80, Math.max(35, startHeight + ((ev.clientY - startY) / height) * 100))
+      );
 
-    const onMouseUp = () => {
-      document.body.style.userSelect = "";
-      document.removeEventListener("mousemove", onMouseMove);
-      document.removeEventListener("mouseup", onMouseUp);
-    };
-
-    document.addEventListener("mousemove", onMouseMove);
-    document.addEventListener("mouseup", onMouseUp);
+    document.addEventListener("mousemove", move);
+    document.addEventListener("mouseup", () =>
+      document.removeEventListener("mousemove", move),
+      { once: true }
+    );
   };
 
-  /* ---------------- Loading / Error States ---------------- */
-  if (loading) {
-    return (
-      <div className="fixed inset-0 flex items-center justify-center bg-gray-950 text-gray-300">
-        Loading problem...
-      </div>
-    );
-  }
+  if (loading)
+    return <div className="fixed inset-0 flex items-center justify-center">Loading...</div>;
 
-  if (error) {
-    return (
-      <div className="fixed inset-0 flex items-center justify-center bg-gray-950 text-red-400">
-        {error}
-      </div>
-    );
-  }
+  if (error)
+    return <div className="fixed inset-0 flex items-center justify-center text-red-400">{error}</div>;
 
   if (!problem) return null;
 
-  /* ---------------- Main Layout ---------------- */
   return (
     <div ref={rootRef} className="fixed inset-0 flex bg-gray-950 text-gray-100">
-      {/* LEFT PANEL */}
-      <div
-        className="border-r border-gray-800 overflow-hidden"
-        style={{ width: `${leftWidth}%` }}
-      >
+      {/* LEFT */}
+      <div style={{ width: `${leftWidth}%` }} className="border-r border-gray-800">
         <ProblemDescription problem={problem} />
       </div>
 
-      {/* VERTICAL SPLITTER */}
-      <div
-        onMouseDown={onVerticalMouseDown}
-        className="w-1 cursor-col-resize bg-gray-800 hover:bg-gray-700"
-      />
+      <div onMouseDown={onVerticalMouseDown} className="w-1 bg-gray-800 cursor-col-resize" />
 
-      {/* RIGHT PANEL */}
-      <div ref={rightRef} className="flex-1 overflow-hidden">
+      {/* RIGHT */}
+      <div className="flex-1 overflow-hidden">
         <div ref={verticalAreaRef} className="h-full flex flex-col">
-          {/* CODE PANEL */}
           <div style={{ height: `${editorHeight}%` }}>
-            <CodePanel boilerplates={problem.boilerplates} />
-          </div>
-
-          {/* HORIZONTAL SPLITTER */}
-          <div
-            onMouseDown={onHorizontalMouseDown}
-            className="h-1 cursor-row-resize bg-gray-800 hover:bg-gray-700 z-50"
-          />
-
-          {/* TESTCASE PANEL */}
-          <div className="flex-1 overflow-y-auto bg-gray-900 z-40">
-            <TestcasePanel
-              testcases={problem.testcases}
-              examples={problem.examples}
+            <CodePanel
+              boilerplates={problem.boilerplates}
+              loading={running}
+              onRun={(code, language) =>
+                runCode({slug, code, language, testcases: runTestcases })
+              }
+              onSubmit={(code, language) =>
+                submitCode({slug, code, language, testcases: runTestcases })
+              }
             />
           </div>
+
+          <div onMouseDown={onHorizontalMouseDown} className="h-1 bg-gray-800 cursor-row-resize" />
+
+          <TestcasePanel
+            testcases={problem.testcases}
+            examples={problem.examples}
+            result={result}
+            onChange={setRunTestcases}
+          />
         </div>
       </div>
     </div>
