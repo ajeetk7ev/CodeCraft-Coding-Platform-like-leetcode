@@ -6,7 +6,7 @@ import CodePanel from "@/components/core/problem-view/CodePanel";
 import TestcasePanel from "@/components/core/problem-view/TestcasePanel";
 
 import { useProblemStore } from "@/stores/problemStore";
-import { useSubmissionStore } from "@/stores/submissionStoret";
+import { useSubmissionStore } from "@/stores/submissionStore";
 
 type RunTestcase = {
   stdin: string;
@@ -100,7 +100,7 @@ export default function ProblemView() {
   if (!problem) return null;
 
   return (
-    <div ref={rootRef} className="fixed inset-0 flex bg-gray-950 text-gray-100">
+    <div ref={rootRef} className="fixed inset-0 flex bg-gray-900 text-gray-100">
       {/* LEFT */}
       <div style={{ width: `${leftWidth}%` }} className="border-r border-gray-800">
         <ProblemDescription problem={problem} />
@@ -110,7 +110,7 @@ export default function ProblemView() {
 
       {/* RIGHT */}
       <div className="flex-1 overflow-hidden">
-        <div ref={verticalAreaRef} className="h-full flex flex-col">
+        <div ref={verticalAreaRef} className="h-full flex flex-col z-10">
           <div style={{ height: `${editorHeight}%` }}>
             <CodePanel
               boilerplates={problem.boilerplates}
@@ -119,12 +119,12 @@ export default function ProblemView() {
                 runCode({slug, code, language, testcases: runTestcases })
               }
               onSubmit={(code, language) =>
-                submitCode({slug, code, language, testcases: runTestcases })
+                submitCode({problemId:problem._id, code, language})
               }
             />
           </div>
 
-          <div onMouseDown={onHorizontalMouseDown} className="h-1 bg-gray-800 cursor-row-resize" />
+          <div onMouseDown={onHorizontalMouseDown} className="h-1 z-50 bg-gray-900 cursor-row-resize overflow-y-auto" />
 
           <TestcasePanel
             testcases={problem.testcases}

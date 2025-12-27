@@ -72,7 +72,7 @@ export default function TestcasePanel({
   }, [testcases, examples]);
 
   return (
-    <div className="h-64 bg-gray-900 border-t border-gray-800 flex flex-col text-sm">
+    <div className="h-64 z-50 bg-gray-800 border-t border-gray-800 flex flex-col text-sm">
       {/* Tabs */}
       <div className="flex gap-6 px-4 pt-3 border-b border-gray-800">
         {["testcase", "result"].map((tab) => (
@@ -146,7 +146,7 @@ export default function TestcasePanel({
               className="bg-gray-800 border border-gray-700 rounded-md p-3"
             >
               <div className="flex justify-between mb-1">
-                <span>Testcase {r.testcase}</span>
+                <span>case {r.testcase}</span>
                 <span
                   className={
                     r.verdict === "ACCEPTED"

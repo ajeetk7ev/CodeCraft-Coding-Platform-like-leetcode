@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import axios from "axios";
-import type { RunRequest, RunResponse } from "@/types/submission.types";
+import type { RunRequest, RunResponse, SubmitRequest } from "@/types/submission.types";
 import { API_URL } from "@/utils/api";
 
 interface SubmissionState {
@@ -9,7 +9,7 @@ interface SubmissionState {
   result: RunResponse | null;
 
   runCode: (payload: RunRequest) => Promise<void>;
-  submitCode: (payload: RunRequest) => Promise<void>;
+  submitCode: (payload: SubmitRequest) => Promise<void>;
   clearResult: () => void;
 }
 

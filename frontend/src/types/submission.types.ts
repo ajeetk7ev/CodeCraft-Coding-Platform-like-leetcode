@@ -10,6 +10,12 @@ export type RunRequest = {
   testcases: TestcaseInput[];
 };
 
+export type SubmitRequest = {
+  problemId:string;
+  code:string;
+  language:string;
+}
+
 export type TestcaseResult = {
   testcase: number;
   input: string;
