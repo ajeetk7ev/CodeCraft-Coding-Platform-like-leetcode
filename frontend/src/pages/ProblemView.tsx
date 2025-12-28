@@ -24,7 +24,7 @@ export default function ProblemView() {
   const { problem, loading, error, fetchProblemBySlug, clearProblem } =
     useProblemStore();
 
-  const { runCode, submitCode, result, loading: running } =
+  const { runCode, submitCode, runResult, submissionResult, cancelPolling, loading: running } =
     useSubmissionStore();
 
   const rootRef = useRef<HTMLDivElement>(null);
@@ -53,6 +53,13 @@ export default function ProblemView() {
     );
 
   }, [problem]);
+
+  useEffect(() => {
+  return () => {
+    cancelPolling(); // ✅ stop polling when leaving page
+  };
+}, []);
+
 
   /* -------- layout drag -------- */
   const onVerticalMouseDown = (e: React.MouseEvent) => {
@@ -129,7 +136,7 @@ export default function ProblemView() {
           <TestcasePanel
             testcases={problem.testcases}
             examples={problem.examples}
-            result={result}
+            result={submissionResult || runResult}
             onChange={setRunTestcases}
           />
         </div>
