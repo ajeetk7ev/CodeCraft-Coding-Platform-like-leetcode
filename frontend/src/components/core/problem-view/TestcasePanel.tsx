@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 
+/* ---------- types ---------- */
+
 type Testcase = {
   input?: string;
   output?: string;
@@ -41,17 +43,20 @@ const buildInputs = (example: string, value = "") => {
   }));
 };
 
+/* ====================================================== */
+
 export default function TestcasePanel({
   testcases,
   examples,
   result,
   onChange,
 }: Props) {
-  const [activeTab, setActiveTab] = useState<"testcase" | "result">("testcase");
+  const [activeTab, setActiveTab] =
+    useState<"testcase" | "result">("testcase");
   const [activeCase, setActiveCase] = useState(0);
   const [cases, setCases] = useState<ParsedInput[][]>([]);
 
-  /* ---------- init from backend ---------- */
+  /* ---------- init testcases ---------- */
   useEffect(() => {
     const baseExample = examples?.[0]?.input ?? "x";
 
@@ -62,7 +67,6 @@ export default function TestcasePanel({
     setCases(parsed);
     setActiveCase(0);
 
-    // notify parent ONCE
     onChange(
       testcases.map((tc) => ({
         stdin: tc.input ?? "",
@@ -71,8 +75,12 @@ export default function TestcasePanel({
     );
   }, [testcases, examples]);
 
+  /* ---------- detect result type ---------- */
+  const isRunResult = result?.results;
+  const isSubmitResult = result?.testcaseResults;
+
   return (
-    <div className="h-64 z-50 bg-gray-800 border-t border-gray-800 flex flex-col text-sm">
+    <div className="h-64 bg-gray-800 border-t border-gray-800 flex flex-col text-sm">
       {/* Tabs */}
       <div className="flex gap-6 px-4 pt-3 border-b border-gray-800">
         {["testcase", "result"].map((tab) => (
@@ -90,10 +98,9 @@ export default function TestcasePanel({
         ))}
       </div>
 
-      {/* ---------------- TESTCASES ---------------- */}
+      {/* ================= TESTCASES ================= */}
       {activeTab === "testcase" && (
         <>
-          {/* Case selector */}
           <div className="flex gap-2 px-4 py-3">
             {cases.map((_, idx) => (
               <button
@@ -110,20 +117,17 @@ export default function TestcasePanel({
             ))}
           </div>
 
-          {/* Read-only inputs */}
           <div className="flex-1 overflow-y-auto px-4 space-y-4 pb-4">
             {cases[activeCase]?.map((input, idx) => (
               <div key={idx}>
-                <div className="text-gray-400 mb-1">{input.key} =</div>
+                <div className="text-gray-400 mb-1">
+                  {input.key} =
+                </div>
                 <input
                   value={input.value}
                   readOnly
                   disabled
-                  className="
-                    w-full bg-gray-800 border border-gray-700 rounded-md
-                    px-3 py-2 text-gray-300
-                    cursor-not-allowed
-                  "
+                  className="w-full bg-gray-800 border border-gray-700 rounded-md px-3 py-2 text-gray-300"
                 />
               </div>
             ))}
@@ -131,38 +135,102 @@ export default function TestcasePanel({
         </>
       )}
 
-      {/* ---------------- RESULTS ---------------- */}
+      {/* ================= RESULTS ================= */}
       {activeTab === "result" && (
         <div className="flex-1 overflow-y-auto p-4 space-y-3">
           {!result && (
             <div className="text-gray-400 text-center">
-              You must run your code first
+              Run or submit your code to see results
             </div>
           )}
 
-          {result?.results.map((r: any) => (
-            <div
-              key={r.testcase}
-              className="bg-gray-800 border border-gray-700 rounded-md p-3"
-            >
-              <div className="flex justify-between mb-1">
-                <span>case {r.testcase}</span>
+          {/* ---------- RUN RESULT ---------- */}
+          {isRunResult &&
+            result.results.map((r: any, idx: number) => (
+              <div
+                key={idx}
+                className="bg-gray-800 border border-gray-700 rounded-md p-3"
+              >
+                <div className="flex justify-between mb-1">
+                  <span>Case {r.testcase}</span>
+                  <span
+                    className={
+                      r.verdict === "ACCEPTED"
+                        ? "text-green-400"
+                        : "text-red-400"
+                    }
+                  >
+                    {r.verdict}
+                  </span>
+                </div>
+
+                <div className="text-xs text-gray-400">
+                  Output: {r.stdout}
+                </div>
+              </div>
+            ))}
+
+          {/* ---------- SUBMIT RESULT ---------- */}
+          {isSubmitResult && (
+            <>
+              {/* Overall verdict */}
+              <div className="flex justify-between text-sm mb-2">
+                <span>Status: {result.status}</span>
                 <span
                   className={
-                    r.verdict === "ACCEPTED"
+                    result.verdict === "ACCEPTED"
                       ? "text-green-400"
                       : "text-red-400"
                   }
                 >
-                  {r.verdict}
+                  {result.verdict}
                 </span>
               </div>
 
-              <div className="text-xs text-gray-400">
-                Output: {r.stdout}
+              {/* Per testcase */}
+              {result.testcaseResults.map((tc: any, idx: number) => (
+                <div
+                  key={idx}
+                  className="bg-gray-800 border border-gray-700 rounded-md p-3"
+                >
+                  <div className="flex justify-between mb-1">
+                    <span>Case {idx + 1}</span>
+                    <span
+                      className={
+                        tc.passed
+                          ? "text-green-400"
+                          : "text-red-400"
+                      }
+                    >
+                      {tc.passed ? "PASSED" : "FAILED"}
+                    </span>
+                  </div>
+
+                  <div className="text-xs text-gray-400 space-y-1">
+                    {tc.input && (
+                      <div>Input: {tc.input}</div>
+                    )}
+                    {tc.expectedOutput && (
+                      <div>
+                        Expected: {tc.expectedOutput}
+                      </div>
+                    )}
+                    <div>Output: {tc.userOutput}</div>
+                    <div>
+                      Runtime: {tc.runtime} ms | Memory:{" "}
+                      {tc.memory} KB
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              {/* Summary */}
+              <div className="text-xs text-gray-400 mt-3">
+                Total Runtime: {result.totalRuntime} ms | Total
+                Memory: {result.totalMemory} KB
               </div>
-            </div>
-          ))}
+            </>
+          )}
         </div>
       )}
     </div>

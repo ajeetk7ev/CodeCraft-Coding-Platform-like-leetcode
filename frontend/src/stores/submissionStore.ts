@@ -36,7 +36,7 @@ export const useSubmissionStore = create<SubmissionState>((set, get) => ({
   /* ---------------- RUN CODE ---------------- */
   runCode: async (payload) => {
     try {
-      get().cancelPolling(); // 🔥 stop any existing polling
+      get().cancelPolling(); //stop any existing polling
       set({ loading: true, error: null });
 
       const res = await axios.post(`${API_URL}/submissions/run`, payload);
@@ -93,14 +93,15 @@ export const useSubmissionStore = create<SubmissionState>((set, get) => ({
         });
 
         const submission = res.data.data;
-        console.log("Submission resule is ", submission);
+      
 
-        set({ submissionResult: submission });
+     
 
         if (
           submission.status === "COMPLETED" ||
           submission.status === "FAILED"
         ) {
+          set({ submissionResult: submission });
           set({ pollTimeoutId: null });
           return;
         }
