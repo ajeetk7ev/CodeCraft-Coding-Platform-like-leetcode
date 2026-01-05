@@ -9,7 +9,8 @@ import { API_URL } from "@/utils/api";
 import { useAuthStore } from "./authStore";
 
 interface SubmissionState {
-  loading: boolean;
+  runCodeLoading: boolean;
+  submitCodeLoading: boolean;
   error: string | null;
 
   runResult: RunResponse | null;
@@ -25,7 +26,9 @@ interface SubmissionState {
 }
 
 export const useSubmissionStore = create<SubmissionState>((set, get) => ({
-  loading: false,
+  runCodeLoading: false,
+  submitCodeLoading: false,
+
   error: null,
 
   runResult: null,
@@ -37,17 +40,17 @@ export const useSubmissionStore = create<SubmissionState>((set, get) => ({
   runCode: async (payload) => {
     try {
       get().cancelPolling(); //stop any existing polling
-      set({ loading: true, error: null });
+      set({ runCodeLoading: true, error: null });
 
       const res = await axios.post(`${API_URL}/submissions/run`, payload);
       set({
         runResult: res.data.data,
         submissionResult: null,
-        loading: false,
+        runCodeLoading: false,
       });
     } catch (err: any) {
       set({
-        loading: false,
+        runCodeLoading: false,
         error: err?.response?.data?.message || "Failed to run code",
       });
     }
@@ -57,7 +60,7 @@ export const useSubmissionStore = create<SubmissionState>((set, get) => ({
   submitCode: async (payload) => {
     try {
       get().cancelPolling(); //important
-      set({ loading: true, error: null });
+      set({ submitCodeLoading: true, error: null });
 
       const res = await axios.post(`${API_URL}/submissions/submit`, payload, {
         headers: {
@@ -67,12 +70,10 @@ export const useSubmissionStore = create<SubmissionState>((set, get) => ({
 
       const { submissionId } = res.data.data;
 
-      set({ loading: false });
-
       get().pollSubmission(submissionId);
     } catch (err: any) {
       set({
-        loading: false,
+        submitCodeLoading: false,
         error: err?.response?.data?.message || "Failed to submit code",
       });
     }
@@ -92,13 +93,14 @@ export const useSubmissionStore = create<SubmissionState>((set, get) => ({
         });
 
         const submission = res.data.data;
-    
+
         if (
           submission.status === "COMPLETED" ||
           submission.status === "FAILED"
         ) {
           set({ submissionResult: submission });
           set({ pollTimeoutId: null });
+          set({submitCodeLoading:false})
           return;
         }
 
@@ -107,6 +109,7 @@ export const useSubmissionStore = create<SubmissionState>((set, get) => ({
             error: "Submission timed out",
             pollTimeoutId: null,
           });
+          set({submitCodeLoading:false});
           return;
         }
 
@@ -120,6 +123,7 @@ export const useSubmissionStore = create<SubmissionState>((set, get) => ({
             err?.response?.data?.message || "Failed to fetch submission result",
           pollTimeoutId: null,
         });
+        set({submitCodeLoading:false})
       }
     };
 

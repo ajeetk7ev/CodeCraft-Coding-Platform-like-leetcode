@@ -12,7 +12,7 @@ const preferencesSchema = new Schema<IPreferences>(
   {
     user: { type: Schema.Types.ObjectId, ref: "User", required: true, unique: true },
 
-    defaultLanguage: { type: String, default: "javascript" },
+    defaultLanguage: { type: String, default: "cpp" },
     theme: { type: String, default: "dark" },
     fontSize: { type: Number, default: 14 },
     tabSize: { type: Number, default: 2 },

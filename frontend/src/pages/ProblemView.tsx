@@ -30,7 +30,8 @@ export default function ProblemView() {
     runResult,
     submissionResult,
     cancelPolling,
-    loading: running,
+    runCodeLoading,
+    submitCodeLoading,
   } = useSubmissionStore();
 
   const rootRef = useRef<HTMLDivElement>(null);
@@ -153,8 +154,10 @@ export default function ProblemView() {
         <div ref={verticalAreaRef} className="h-full flex flex-col z-10">
           <div style={{ height: `${editorHeight}%` }}>
             <CodePanel
+              problemSlug={slug}
               boilerplates={problem.boilerplates}
-              loading={running}
+              runCodeLoading={runCodeLoading}
+              submitCodeLoading={submitCodeLoading}
               onRun={(code, language) =>
                 runCode({ slug, code, language, testcases: runTestcases })
               }
