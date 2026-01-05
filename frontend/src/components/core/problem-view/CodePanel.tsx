@@ -1,7 +1,9 @@
 import Editor from "@monaco-editor/react";
-import { useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import CodePanelHeader from "./CodePanelHeader";
 import type { Boilerplate } from "@/types";
+import { setToLocalStorage } from "@/utils/localstorage";
+import { getFromLocalStorage } from "@/utils/localstorage";
 
 interface Props {
   boilerplates: Boilerplate[];
@@ -16,13 +18,34 @@ export default function CodePanel({
   onRun,
   onSubmit,
 }: Props) {
-  const [language, setLanguage] = useState(boilerplates[0].language);
-  const [code, setCode] = useState(boilerplates[0].userCodeTemplate);
+  const initialLanguage =
+   getFromLocalStorage("language") || boilerplates[0].language;
+
+  const [language, setLanguage] = useState(initialLanguage);
+
+  const editorRef = useRef<any>(null);
+  const codeRef = useRef("");
+
+  // 🔹 Load code on mount / language change
+  useEffect(() => {
+    const savedCode = getFromLocalStorage(`code:${language}`);
+    const bp = boilerplates.find((b) => b.language === language);
+
+    codeRef.current = savedCode || bp?.userCodeTemplate || "";
+
+    if (editorRef.current) {
+      editorRef.current.setValue(codeRef.current);
+    }
+  }, [language, boilerplates]);
 
   const changeLang = (lang: string) => {
     setLanguage(lang);
-    const bp = boilerplates.find((b) => b.language === lang);
-    if (bp) setCode(bp.userCodeTemplate);
+    setToLocalStorage("language", lang);
+  };
+
+  const handleEditorMount = (editor: any) => {
+    editorRef.current = editor;
+    editor.setValue(codeRef.current);
   };
 
   return (
@@ -30,8 +53,8 @@ export default function CodePanel({
       <CodePanelHeader
         language={language}
         onLanguageChange={changeLang}
-        onRun={() => onRun(code, language)}
-        onSubmit={() => onSubmit(code, language)}
+        onRun={() => onRun(codeRef.current, language)}
+        onSubmit={() => onSubmit(codeRef.current, language)}
         loading={loading}
       />
 
@@ -39,9 +62,16 @@ export default function CodePanel({
         height="100%"
         language={language}
         theme="vs-dark"
-        value={code}
-        onChange={(v) => setCode(v || "")}
-        options={{ minimap: { enabled: false }, fontSize: 14 }}
+        onMount={handleEditorMount}
+        onChange={(v) => {
+          const value = v || "";
+          codeRef.current = value;
+          setToLocalStorage(`code:${language}`, value);
+        }}
+        options={{
+          minimap: { enabled: false },
+          fontSize: 14,
+        }}
       />
     </div>
   );
