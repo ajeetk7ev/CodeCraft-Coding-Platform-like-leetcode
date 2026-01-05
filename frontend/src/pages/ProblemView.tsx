@@ -4,6 +4,7 @@ import { useParams } from "react-router-dom";
 import ProblemDescription from "@/components/core/problem-view/ProblemDescription";
 import CodePanel from "@/components/core/problem-view/CodePanel";
 import TestcasePanel from "@/components/core/problem-view/TestcasePanel";
+import SubmitResultModal from "@/components/core/problem-view/SubmitResultModal";
 
 import { useProblemStore } from "@/stores/problemStore";
 import { useSubmissionStore } from "@/stores/submissionStore";
@@ -14,18 +15,23 @@ type RunTestcase = {
 };
 
 export default function ProblemView() {
-  const { slug } = useParams<{ slug: string}>();
+  const { slug } = useParams<{ slug: string }>();
 
-  if(!slug){
+  if (!slug) {
     return null;
   }
-  
 
   const { problem, loading, error, fetchProblemBySlug, clearProblem } =
     useProblemStore();
 
-  const { runCode, submitCode, runResult, submissionResult, cancelPolling, loading: running } =
-    useSubmissionStore();
+  const {
+    runCode,
+    submitCode,
+    runResult,
+    submissionResult,
+    cancelPolling,
+    loading: running,
+  } = useSubmissionStore();
 
   const rootRef = useRef<HTMLDivElement>(null);
   const verticalAreaRef = useRef<HTMLDivElement>(null);
@@ -34,6 +40,13 @@ export default function ProblemView() {
   const [editorHeight, setEditorHeight] = useState(65);
   const [runTestcases, setRunTestcases] = useState<RunTestcase[]>([]);
 
+  const [showSubmitModal, setShowSubmitModal] = useState(false);
+
+  useEffect(() => {
+    if (submissionResult) {
+      setShowSubmitModal(true);
+    }
+  }, [submissionResult]);
 
   /* -------- fetch problem -------- */
   useEffect(() => {
@@ -51,15 +64,13 @@ export default function ProblemView() {
         expectedOutput: t.output,
       }))
     );
-
   }, [problem]);
 
   useEffect(() => {
-  return () => {
-    cancelPolling(); // ✅ stop polling when leaving page
-  };
-}, []);
-
+    return () => {
+      cancelPolling(); // ✅ stop polling when leaving page
+    };
+  }, []);
 
   /* -------- layout drag -------- */
   const onVerticalMouseDown = (e: React.MouseEvent) => {
@@ -70,12 +81,16 @@ export default function ProblemView() {
 
     const move = (ev: MouseEvent) =>
       setLeftWidth(
-        Math.min(70, Math.max(25, startWidth + ((ev.clientX - startX) / width) * 100))
+        Math.min(
+          70,
+          Math.max(25, startWidth + ((ev.clientX - startX) / width) * 100)
+        )
       );
 
     document.addEventListener("mousemove", move);
-    document.addEventListener("mouseup", () =>
-      document.removeEventListener("mousemove", move),
+    document.addEventListener(
+      "mouseup",
+      () => document.removeEventListener("mousemove", move),
       { once: true }
     );
   };
@@ -88,32 +103,50 @@ export default function ProblemView() {
 
     const move = (ev: MouseEvent) =>
       setEditorHeight(
-        Math.min(80, Math.max(35, startHeight + ((ev.clientY - startY) / height) * 100))
+        Math.min(
+          80,
+          Math.max(35, startHeight + ((ev.clientY - startY) / height) * 100)
+        )
       );
 
     document.addEventListener("mousemove", move);
-    document.addEventListener("mouseup", () =>
-      document.removeEventListener("mousemove", move),
+    document.addEventListener(
+      "mouseup",
+      () => document.removeEventListener("mousemove", move),
       { once: true }
     );
   };
 
   if (loading)
-    return <div className="fixed inset-0 flex items-center justify-center">Loading...</div>;
+    return (
+      <div className="fixed inset-0 flex items-center justify-center">
+        Loading...
+      </div>
+    );
 
   if (error)
-    return <div className="fixed inset-0 flex items-center justify-center text-red-400">{error}</div>;
+    return (
+      <div className="fixed inset-0 flex items-center justify-center text-red-400">
+        {error}
+      </div>
+    );
 
   if (!problem) return null;
 
   return (
     <div ref={rootRef} className="fixed inset-0 flex bg-gray-900 text-gray-100">
       {/* LEFT */}
-      <div style={{ width: `${leftWidth}%` }} className="border-r border-gray-800">
+      <div
+        style={{ width: `${leftWidth}%` }}
+        className="border-r border-gray-800"
+      >
         <ProblemDescription problem={problem} />
       </div>
 
-      <div onMouseDown={onVerticalMouseDown} className="w-1 bg-gray-800 cursor-col-resize" />
+      <div
+        onMouseDown={onVerticalMouseDown}
+        className="w-1 bg-gray-800 cursor-col-resize"
+      />
 
       {/* RIGHT */}
       <div className="flex-1 overflow-hidden">
@@ -123,24 +156,33 @@ export default function ProblemView() {
               boilerplates={problem.boilerplates}
               loading={running}
               onRun={(code, language) =>
-                runCode({slug, code, language, testcases: runTestcases })
+                runCode({ slug, code, language, testcases: runTestcases })
               }
               onSubmit={(code, language) =>
-                submitCode({problemId:problem._id, code, language})
+                submitCode({ problemId: problem._id, code, language })
               }
             />
           </div>
 
-          <div onMouseDown={onHorizontalMouseDown} className="h-1 z-50 bg-gray-900 cursor-row-resize overflow-y-auto" />
+          <div
+            onMouseDown={onHorizontalMouseDown}
+            className="h-1 z-50 bg-gray-900 cursor-row-resize overflow-y-auto "
+          />
 
           <TestcasePanel
             testcases={problem.testcases}
             examples={problem.examples}
-            result={submissionResult || runResult}
+            result={runResult}
             onChange={setRunTestcases}
           />
         </div>
       </div>
+
+      <SubmitResultModal
+        open={showSubmitModal}
+        result={submissionResult}
+        onClose={() => setShowSubmitModal(false)}
+      />
     </div>
   );
 }

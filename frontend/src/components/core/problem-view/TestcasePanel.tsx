@@ -51,8 +51,7 @@ export default function TestcasePanel({
   result,
   onChange,
 }: Props) {
-  const [activeTab, setActiveTab] =
-    useState<"testcase" | "result">("testcase");
+  const [activeTab, setActiveTab] = useState<"testcase" | "result">("testcase");
   const [activeCase, setActiveCase] = useState(0);
   const [cases, setCases] = useState<ParsedInput[][]>([]);
 
@@ -60,9 +59,7 @@ export default function TestcasePanel({
   useEffect(() => {
     const baseExample = examples?.[0]?.input ?? "x";
 
-    const parsed = testcases.map((tc) =>
-      buildInputs(baseExample, tc.input)
-    );
+    const parsed = testcases.map((tc) => buildInputs(baseExample, tc.input));
 
     setCases(parsed);
     setActiveCase(0);
@@ -75,12 +72,17 @@ export default function TestcasePanel({
     );
   }, [testcases, examples]);
 
+  useEffect(() => {
+    if(result){
+      setActiveTab("result")
+    }
+  } ,[result])
+
   /* ---------- detect result type ---------- */
   const isRunResult = result?.results;
-  const isSubmitResult = result?.testcaseResults;
 
   return (
-    <div className="h-64 bg-gray-800 border-t border-gray-800 flex flex-col text-sm">
+    <div className="h-64 z-50 bg-gray-800 border-t border-gray-800 flex flex-col text-sm">
       {/* Tabs */}
       <div className="flex gap-6 px-4 pt-3 border-b border-gray-800">
         {["testcase", "result"].map((tab) => (
@@ -93,7 +95,7 @@ export default function TestcasePanel({
                 : "text-gray-400"
             }`}
           >
-            {tab === "testcase" ? "Testcase" : "Result"}
+            {tab === "testcase" ? "Testcase" : "Test Result"}
           </button>
         ))}
       </div>
@@ -120,14 +122,12 @@ export default function TestcasePanel({
           <div className="flex-1 overflow-y-auto px-4 space-y-4 pb-4">
             {cases[activeCase]?.map((input, idx) => (
               <div key={idx}>
-                <div className="text-gray-400 mb-1">
-                  {input.key} =
-                </div>
+                <div className="text-gray-400 mb-1">{input.key} =</div>
                 <input
                   value={input.value}
                   readOnly
                   disabled
-                  className="w-full bg-gray-800 border border-gray-700 rounded-md px-3 py-2 text-gray-300"
+                  className="w-fit bg-gray-800 border border-gray-700 rounded-md px-3 py-2 text-gray-300"
                 />
               </div>
             ))}
@@ -146,91 +146,62 @@ export default function TestcasePanel({
 
           {/* ---------- RUN RESULT ---------- */}
           {isRunResult &&
-            result.results.map((r: any, idx: number) => (
-              <div
-                key={idx}
-                className="bg-gray-800 border border-gray-700 rounded-md p-3"
-              >
-                <div className="flex justify-between mb-1">
-                  <span>Case {r.testcase}</span>
-                  <span
-                    className={
-                      r.verdict === "ACCEPTED"
-                        ? "text-green-400"
-                        : "text-red-400"
-                    }
-                  >
-                    {r.verdict}
-                  </span>
-                </div>
+            result.results.map((r: any, idx: number) => {
+              const isError =
+                r.verdict === "COMPILE_ERROR" || r.verdict === "RUNTIME_ERROR";
 
-                <div className="text-xs text-gray-400">
-                  Output: {r.stdout}
-                </div>
-              </div>
-            ))}
-
-          {/* ---------- SUBMIT RESULT ---------- */}
-          {isSubmitResult && (
-            <>
-              {/* Overall verdict */}
-              <div className="flex justify-between text-sm mb-2">
-                <span>Status: {result.status}</span>
-                <span
-                  className={
-                    result.verdict === "ACCEPTED"
-                      ? "text-green-400"
-                      : "text-red-400"
-                  }
-                >
-                  {result.verdict}
-                </span>
-              </div>
-
-              {/* Per testcase */}
-              {result.testcaseResults.map((tc: any, idx: number) => (
+              return (
                 <div
                   key={idx}
                   className="bg-gray-800 border border-gray-700 rounded-md p-3"
                 >
-                  <div className="flex justify-between mb-1">
-                    <span>Case {idx + 1}</span>
+                  {/* Header */}
+                  <div className="flex justify-between mb-2">
+                    <span>Case {r.testcase}</span>
                     <span
                       className={
-                        tc.passed
+                        r.verdict === "ACCEPTED"
                           ? "text-green-400"
                           : "text-red-400"
                       }
                     >
-                      {tc.passed ? "PASSED" : "FAILED"}
+                      {r.verdict}
                     </span>
                   </div>
 
-                  <div className="text-xs text-gray-400 space-y-1">
-                    {tc.input && (
-                      <div>Input: {tc.input}</div>
-                    )}
-                    {tc.expectedOutput && (
-                      <div>
-                        Expected: {tc.expectedOutput}
-                      </div>
-                    )}
-                    <div>Output: {tc.userOutput}</div>
-                    <div>
-                      Runtime: {tc.runtime} ms | Memory:{" "}
-                      {tc.memory} KB
-                    </div>
-                  </div>
-                </div>
-              ))}
+                  {/* ================= ERROR UI ================= */}
+                  {isError && (
+                    <pre className="text-red-400 text-xs bg-gray-900 p-3 rounded-md overflow-x-auto">
+                      {r.compileOutput || r.stderr || "Unknown Error"}
+                    </pre>
+                  )}
 
-              {/* Summary */}
-              <div className="text-xs text-gray-400 mt-3">
-                Total Runtime: {result.totalRuntime} ms | Total
-                Memory: {result.totalMemory} KB
-              </div>
-            </>
-          )}
+                  {/* ================= SUCCESS / WA UI ================= */}
+                  {!isError && (
+                    <div className="text-xs text-gray-300 space-y-1 ">
+                      <div>
+                        <span className="text-gray-400">Input:</span> {r.input}
+                      </div>
+
+                      <div>
+                        <span className="text-gray-400">Expected:</span>{" "}
+                        {r.expectedOutput}
+                      </div>
+
+                      <div>
+                        <span className="text-gray-400">Output:</span>{" "}
+                        {r.stdout}
+                      </div>
+
+                      <div className="text-gray-500">
+                        Runtime: {r.runtime} ms | Memory: {r.memory} KB
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+
         </div>
       )}
     </div>

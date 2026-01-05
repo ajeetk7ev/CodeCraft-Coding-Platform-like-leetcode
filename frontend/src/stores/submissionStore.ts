@@ -40,7 +40,6 @@ export const useSubmissionStore = create<SubmissionState>((set, get) => ({
       set({ loading: true, error: null });
 
       const res = await axios.post(`${API_URL}/submissions/run`, payload);
-
       set({
         runResult: res.data.data,
         submissionResult: null,
@@ -93,10 +92,7 @@ export const useSubmissionStore = create<SubmissionState>((set, get) => ({
         });
 
         const submission = res.data.data;
-      
-
-     
-
+    
         if (
           submission.status === "COMPLETED" ||
           submission.status === "FAILED"
