@@ -1,6 +1,14 @@
 import { Code2, Menu, X } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import { User, LogOut, ChevronDown } from "lucide-react";
 
 import {
   Sheet,
@@ -52,11 +60,61 @@ export default function Navbar() {
             </Link>
           )}
 
-          {token && (
-            <Avatar>
-              <AvatarImage src={user?.avatar || "https://github.com/shadcn.png"} />
-              <AvatarFallback>CN</AvatarFallback>
-            </Avatar>
+          {token && user && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-gray-800 hover:bg-gray-800 transition">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage
+                      src={user.avatar || "https://github.com/shadcn.png"}
+                    />
+                    <AvatarFallback>
+                      {user.username?.[0]?.toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+
+                  <span className="text-sm text-gray-200">{user.username}</span>
+                  <ChevronDown className="h-4 w-4 text-gray-400" />
+                </button>
+              </DropdownMenuTrigger>
+
+              <DropdownMenuContent
+                align="end"
+                className="w-44 bg-gray-900 border border-gray-800 p-1"
+              >
+                {/* PROFILE */}
+                <DropdownMenuItem asChild>
+                  <Link
+                    to={`/profile/${user.username}`}
+                    className="
+            flex items-center gap-2 rounded-md px-2 py-2
+            text-gray-200
+            hover:bg-gray-800 hover:text-white
+            focus:bg-gray-800 focus:text-white
+          "
+                  >
+                    <User className="h-4 w-4" />
+                    Profile
+                  </Link>
+                </DropdownMenuItem>
+
+                <DropdownMenuSeparator className="bg-gray-800 my-1" />
+
+                {/* LOGOUT */}
+                <DropdownMenuItem
+                  onClick={() => useAuthStore.getState().logout()}
+                  className="
+          flex items-center gap-2 rounded-md px-2 py-2
+          text-red-400
+          hover:bg-red-500/10 hover:text-red-400
+          focus:bg-red-500/10 focus:text-red-400
+        "
+                >
+                  <LogOut className="h-4 w-4 text-red-400" />
+                  Logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
         </div>
 
@@ -103,7 +161,13 @@ function NavItem({ label, to }: { label: string; to: string }) {
 
 /* ---------------- Mobile Nav ---------------- */
 
-function MobileNav({ closeSheet, token }: { closeSheet: () => void, token:string | null }) {
+function MobileNav({
+  closeSheet,
+  token,
+}: {
+  closeSheet: () => void;
+  token: string | null;
+}) {
   return (
     <div className="flex flex-col gap-6 mt-10">
       <MobileNavItem to="/problems" label="Problems" onClick={closeSheet} />
@@ -116,15 +180,15 @@ function MobileNav({ closeSheet, token }: { closeSheet: () => void, token:string
       />
 
       <div className="pt-6 border-t border-gray-800">
-        {!token &&
-        <Link
-          to="/login"
-          onClick={closeSheet}
-          className="block w-full text-center px-4 py-3 rounded-md bg-gray-800 text-gray-300 hover:bg-gray-700 hover:text-white transition"
-        >
-          Login
-        </Link>
-        }
+        {!token && (
+          <Link
+            to="/login"
+            onClick={closeSheet}
+            className="block w-full text-center px-4 py-3 rounded-md bg-gray-800 text-gray-300 hover:bg-gray-700 hover:text-white transition"
+          >
+            Login
+          </Link>
+        )}
       </div>
     </div>
   );
