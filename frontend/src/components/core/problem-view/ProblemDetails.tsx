@@ -2,6 +2,7 @@ import { useState } from "react";
 import ProblemTabs from "./ProblemTabs";
 import ProblemDescription from "./ProblemDescription";
 import type { Problem } from "@/types";
+import ProblemSubmission from "./ProblemSubmission";
 
 export default function ProblemDetails({problem}:{problem:Problem}) {
   const [active, setActive] = useState("Description");
@@ -15,7 +16,7 @@ export default function ProblemDetails({problem}:{problem:Problem}) {
         {active === "Description" && <ProblemDescription problem={problem}/>}
         {active === "Editorial" && <div>Editorial Comming Soon</div>}
         {active === "Solutions" && <div>Solutions Comming Soon</div>}
-        {active === "Submissions" && <div>Submissions Content</div>}
+        {active === "Submissions" && <ProblemSubmission/>}
       </div>
     </div>
   );

@@ -218,17 +218,23 @@ export const getUserSubmissions = async (req: Request, res: Response) => {
     const limitNum = parseInt(limit as string, 10);
     const skip = (pageNum - 1) * limitNum;
 
+
     const submissions = await Submission.find(query)
-      .populate("problem", "title slug difficulty")
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limitNum)
-      .select("-code"); // Don't include code in list view
+  .populate("problem", "title slug difficulty")
+  .select("-__v")
+  .sort({ createdAt: -1 })
+  .skip(skip)
+  .limit(limitNum)
+  .lean();
+
+
+   
 
     const total = await Submission.countDocuments(query);
 
     return res.json({
       success: true,
+      message: "Submissions fetched successfully",
       data: submissions,
       pagination: {
         page: pageNum,

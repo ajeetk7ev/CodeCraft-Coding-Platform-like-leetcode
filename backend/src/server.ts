@@ -15,11 +15,13 @@ const app = express();
 
 const PORT = process.env.PORT || 5000;
 
+console.log("PORT:",PORT);
+
 app.use(express.json());
 app.use(cors());
 
-app.get("/", (_, res) => {
-      res.send("I am working fine")
+app.get("/health", (_, res) => {
+    res.send("Server is working fine")
 })
 
 app.use("/api/auth", authRoutes)
