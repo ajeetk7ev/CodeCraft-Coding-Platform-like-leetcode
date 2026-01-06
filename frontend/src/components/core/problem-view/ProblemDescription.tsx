@@ -1,23 +1,20 @@
 import type { Problem } from "@/types";
 import DifficultyBadge from "./DifficultyBadge";
-import ProblemTabs from "./ProblemTabs";
-
-
-
-export default function ProblemDescription({
-  problem,
-}: {
-  problem: Problem;
-}) {
- 
+export default function ProblemDescription({ problem }: { problem: Problem }) {
   return (
-    <div className="h-full overflow-y-auto p-6">
-      <ProblemTabs />
+    <div className="h-full overflow-y-auto px-6 ">
+    
+    
 
-      <div className="mt-6 space-y-6">
-        {/* Title */}
-        <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold">{problem.title}</h1>
+      <div className="space-y-4">
+        {/* Header */}
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight text-white">
+              {problem.title}
+            </h1>
+          </div>
+
           <DifficultyBadge difficulty={problem.difficulty} />
         </div>
 
@@ -26,15 +23,16 @@ export default function ProblemDescription({
           {problem.tags.map((tag) => (
             <span
               key={tag}
-              className="text-xs bg-gray-800 px-3 py-1 rounded-full"
+              className="rounded-full border border-gray-700 bg-gray-800/60 px-3 py-1 text-xs text-gray-300"
             >
               {tag}
             </span>
           ))}
+
           {problem.companyTags.map((c) => (
             <span
               key={c}
-              className="text-xs bg-indigo-500/10 text-indigo-400 px-3 py-1 rounded-full"
+              className="rounded-full bg-indigo-500/10 px-3 py-1 text-xs text-indigo-400"
             >
               {c}
             </span>
@@ -42,37 +40,55 @@ export default function ProblemDescription({
         </div>
 
         {/* Description */}
-        <p className="text-gray-300 text-sm leading-relaxed">
-          {problem.description}
-        </p>
-
-       
+        <div >
+         
+          <p className="text-sm leading-relaxed text-gray-300">
+            {problem.description}
+          </p>
+        </div>
 
         {/* Examples */}
         <div>
-          <h3 className="font-semibold mb-3">Examples</h3>
-          {problem.examples.map((ex, i) => (
-            <div
-              key={i}
-              className=" rounded-lg p-4 text-sm space-y-2"
-            >
-              <div>
-                <b>Input:</b> {ex.input}
+          <h3 className="mb-4 text-sm font-semibold text-gray-200">
+            Examples
+          </h3>
+
+          <div className="space-y-4">
+            {problem.examples.map((ex, i) => (
+              <div
+                key={i}
+                className="rounded-xl border border-gray-800 bg-gray-900/40 p-4 text-sm"
+              >
+                <div className="space-y-2 font-mono text-xs">
+                  <div>
+                    <span className="text-gray-400">Input:</span>{" "}
+                    <span className="text-gray-200">{ex.input}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-400">Output:</span>{" "}
+                    <span className="text-gray-200">{ex.output}</span>
+                  </div>
+                </div>
+
+                {ex.explanation && (
+                  <div className="mt-3 border-t border-gray-800 pt-3 text-xs text-gray-400">
+                    <span className="font-semibold text-gray-300">
+                      Explanation:
+                    </span>{" "}
+                    {ex.explanation}
+                  </div>
+                )}
               </div>
-              <div>
-                <b>Output:</b> {ex.output}
-              </div>
-              <div className="text-gray-400">
-                <b>Explanation:</b> {ex.explanation}
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
 
-         {/* Constraints */}
-        <div>
-          <h3 className="font-semibold mb-2">Constraints</h3>
-          <ul className="list-disc list-inside text-sm text-gray-400">
+        {/* Constraints */}
+        <div className="rounded-xl border border-gray-800 bg-gray-900/40 p-5">
+          <h3 className="mb-3 text-sm font-semibold text-gray-200">
+            Constraints
+          </h3>
+          <ul className="list-disc list-inside space-y-1 text-sm text-gray-400">
             {problem.constraints.map((c) => (
               <li key={c}>{c}</li>
             ))}

@@ -8,6 +8,7 @@ import SubmitResultModal from "@/components/core/problem-view/SubmitResultModal"
 
 import { useProblemStore } from "@/stores/problemStore";
 import { useSubmissionStore } from "@/stores/submissionStore";
+import ProblemDetails from "@/components/core/problem-view/ProblemDetails";
 
 type RunTestcase = {
   stdin: string;
@@ -140,7 +141,7 @@ export default function ProblemView() {
         style={{ width: `${leftWidth}%` }}
         className="border-r border-gray-800"
       >
-        <ProblemDescription problem={problem} />
+        <ProblemDetails problem={problem} />
       </div>
 
       <div

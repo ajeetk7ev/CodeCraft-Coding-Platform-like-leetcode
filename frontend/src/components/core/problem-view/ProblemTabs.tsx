@@ -1,10 +1,11 @@
-import { useState } from "react";
+interface ProblemTabsProps {
+  active: string;
+  setActive: (tab: string) => void;
+}
 
 const tabs = ["Description", "Editorial", "Solutions", "Submissions"];
 
-export default function ProblemTabs() {
-  const [active, setActive] = useState("Description");
-
+export default function ProblemTabs({ active, setActive }: ProblemTabsProps) {
   return (
     <div className="flex gap-6 border-b border-gray-800 text-sm">
       {tabs.map((tab) => (
