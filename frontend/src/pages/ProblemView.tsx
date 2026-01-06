@@ -58,7 +58,6 @@ export default function ProblemView() {
   /* -------- init testcases -------- */
   useEffect(() => {
     if (!problem) return;
-    console.log(problem.testcases);
     setRunTestcases(
       problem.testcases.map((t) => ({
         stdin: t.input,
@@ -164,6 +163,7 @@ export default function ProblemView() {
               onSubmit={(code, language) =>
                 submitCode({ problemId: problem._id, code, language })
               }
+              preferences={problem.preferences}
             />
           </div>
 

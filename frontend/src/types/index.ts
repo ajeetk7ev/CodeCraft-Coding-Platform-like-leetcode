@@ -36,6 +36,13 @@ export interface Boilerplate {
   userCodeTemplate: string;
 }
 
+export interface Preferences{
+  defaultLanguage:string;
+  theme:string;
+  fontSize:number;
+  tabSize:number;
+}
+
 export interface Problem {
   _id: string;
   title: string;
@@ -51,4 +58,6 @@ export interface Problem {
 
   tags: string[];
   companyTags: string[];
+
+  preferences:Preferences
 }

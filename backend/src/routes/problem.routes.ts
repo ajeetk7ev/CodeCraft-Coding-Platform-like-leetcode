@@ -13,7 +13,7 @@ const router = express.Router();
 
 // Public routes
 router.get("/", getProblems);
-router.get("/:slug", getProblem);
+router.get("/:slug", protect, getProblem);
 
 // Protected routes (admin only)
 router.post("/", protect, isAdmin, createProblem);

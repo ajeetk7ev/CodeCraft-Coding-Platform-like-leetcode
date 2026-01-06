@@ -7,6 +7,7 @@ import { ProblemBoilerplate } from "../models/problem/ProblemBoilerplate";
 import { ProblemTag } from "../models/problem/ProblemTags";
 import { ProblemCompanyTag } from "../models/problem/ProblemCompanyTag";
 import { ProblemStats } from "../models/problem/ProblemStats";
+import { Preferences } from "../models/user/Preferences";
 import { createProblemSchema, updateProblemSchema } from "../validations/problem.schema";
 
 // Helper function to generate slug from title
@@ -267,6 +268,7 @@ export const getProblem = async (req: Request, res: Response) => {
       boilerplates,
       tags,
       companyTags,
+      preferences
      
     ] = await Promise.all([
       ProblemDescription.findOne({ problem: problem._id }).select("-__v"),
@@ -281,7 +283,9 @@ export const getProblem = async (req: Request, res: Response) => {
       ProblemBoilerplate.find({ problem: problem._id }).select("-__v -problem -fullCodeTemplate -createdAt -updatedAt"),
       ProblemTag.find({ problem: problem._id }).select("-__v -problem"),
       ProblemCompanyTag.find({ problem: problem._id }).select("-__v -problem"),
+      Preferences.findOne({user:user._id}).select("-__v -user -createdAt -updatedAt"),
     ]);
+
 
     return res.json({
       success: true,
@@ -294,6 +298,7 @@ export const getProblem = async (req: Request, res: Response) => {
         boilerplates: boilerplates || [],
         tags: tags.map((t) => t.tag),
         companyTags: companyTags.map((ct) => ct.company),
+        preferences
       },
     });
   } catch (error) {
