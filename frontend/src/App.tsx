@@ -4,6 +4,7 @@ import Signup from "./pages/Signup"
 import Login from "./pages/Login"
 import Problems from "./pages/Problems"
 import ProblemView from "./pages/ProblemView"
+import Profile from "./pages/Profile"
 
 
 function App() {
@@ -15,6 +16,7 @@ function App() {
       <Route path="/login" element={<Login/>} />
       <Route path="/problems" element={<Problems/>}/>
       <Route path="/problems/:slug" element={<ProblemView/>}/>
+      <Route path="/profile/:username" element={<Profile/>}/>
    </Routes>
    </div>
   )
