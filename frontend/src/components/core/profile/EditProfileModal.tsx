@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { useProfileStore } from "@/stores/profileStore";
-import { Camera } from "lucide-react";
+import { Camera, LoaderCircle } from "lucide-react";
 
 interface Props {
   open: boolean;
@@ -19,7 +19,7 @@ interface Props {
 }
 
 export default function EditProfileModal({ open, onClose }: Props) {
-  const { profile, updateProfile, isLoading } = useProfileStore();
+  const { profile, updateProfile } = useProfileStore();
   const fileRef = useRef<HTMLInputElement | null>(null);
 
   const [form, setForm] = useState({
@@ -61,14 +61,15 @@ export default function EditProfileModal({ open, onClose }: Props) {
     setForm({ ...form, avatar: previewUrl });
   }
 
-  async function handleSave() {
+  async function handleSave(e?: React.MouseEvent<HTMLButtonElement>) {
+    e?.preventDefault();
     const formData = new FormData();
     formData.append("fullName", form.fullName);
     formData.append("gender", form.gender);
     formData.append("bio", form.bio);
     formData.append("github", form.github);
     formData.append("linkedin", form.linkedin);
-    
+
     if (fileRef.current?.files?.[0]) {
       formData.append("avatar", fileRef.current.files[0]);
     }
@@ -78,7 +79,7 @@ export default function EditProfileModal({ open, onClose }: Props) {
 
       if (result.success) {
         console.log("Profile updated successfully, closing modal");
-       
+        onClose();
       } else {
         console.error("Failed to update profile:", result.message);
         alert(`Failed to update profile: ${result.message}`);
@@ -97,7 +98,7 @@ export default function EditProfileModal({ open, onClose }: Props) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleClose} >
+    <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="bg-gray-950 border border-gray-800 text-gray-200 max-w-lg max-h-[90vh]">
         <DialogHeader>
           <DialogTitle>Edit Profile</DialogTitle>
@@ -145,9 +146,7 @@ export default function EditProfileModal({ open, onClose }: Props) {
             <select
               name="gender"
               value={form.gender}
-              onChange={(e) =>
-                setForm({ ...form, gender: e.target.value })
-              }
+              onChange={(e) => setForm({ ...form, gender: e.target.value })}
               className="w-full bg-gray-900 border border-gray-700 rounded-md px-3 py-2"
             >
               <option value="male">Male</option>
@@ -188,11 +187,22 @@ export default function EditProfileModal({ open, onClose }: Props) {
         </div>
 
         <DialogFooter className="mt-5">
-          <Button variant="secondary" onClick={onClose} disabled={isLoading}>
+          <Button
+            variant="secondary"
+            onClick={handleClose}
+            disabled={isUpdating}
+            type="button"
+          >
             Cancel
           </Button>
-          <Button onClick={handleSave} disabled={isLoading}>
-            {isLoading ? "Saving..." : "Save Changes"}
+          <Button
+            onClick={handleSave}
+            disabled={isUpdating}
+            type="button"
+            className="flex items-center gap-2"
+          >
+            {isUpdating && <LoaderCircle className="h-4 w-4 animate-spin" />}
+            {isUpdating ? "Saving..." : "Save Changes"}
           </Button>
         </DialogFooter>
       </DialogContent>

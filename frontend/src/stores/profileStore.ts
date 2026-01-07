@@ -2,7 +2,8 @@ import { create } from "zustand";
 import axios from "axios";
 import { API_URL } from "@/utils/api";
 import type { ProfileData, User } from "@/types";
-import { getFromLocalStorage } from "@/utils/localstorage";
+import { getFromLocalStorage, setToLocalStorage } from "@/utils/localstorage";
+import { useAuthStore } from "./authStore";
 
 interface ProfileResponse {
   success: boolean;
@@ -25,7 +26,9 @@ interface ProfileState {
   error: string | null;
 
   fetchProfile: () => Promise<void>;
-  updateProfile: (data: FormData | UpdateProfileRequest) => Promise<{ success: boolean; message: string }>;
+  updateProfile: (
+    data: FormData | UpdateProfileRequest
+  ) => Promise<{ success: boolean; message: string }>;
 }
 
 export const useProfileStore = create<ProfileState>((set, get) => ({
@@ -45,27 +48,30 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
         },
       });
 
-
       if (res.data.success && res.data.data) {
         console.log("Profile data received:", res.data.data);
         set({ profile: res.data.data, isLoading: false });
       } else {
-        set({ error: res.data.message || "Failed to fetch profile", isLoading: false });
+        set({
+          error: res.data.message || "Failed to fetch profile",
+          isLoading: false,
+        });
       }
     } catch (error) {
       console.error("Fetch profile error:", error);
       set({
-        error: error instanceof Error ? error.message : "Failed to fetch profile",
-        isLoading: false
+        error:
+          error instanceof Error ? error.message : "Failed to fetch profile",
+        isLoading: false,
       });
     }
   },
 
   updateProfile: async (data: FormData | UpdateProfileRequest) => {
-    set({ isLoading: true, error: null });
+    set({error: null });
 
     try {
-       const token = getFromLocalStorage("token");
+      const token = getFromLocalStorage("token");
       const config = {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -74,38 +80,48 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
 
       // If data is FormData, don't set Content-Type (let axios set it automatically)
       if (!(data instanceof FormData)) {
-        (config.headers as any)['Content-Type'] = 'application/json';
+        (config.headers as any)["Content-Type"] = "application/json";
       }
 
-      const res = await axios.put<{ success: boolean; message: string; data?: User }>(
-        `${API_URL}/user/profile`,
-        data,
-        config
-      );
+      const res = await axios.put<{
+        success: boolean;
+        message: string;
+        data?: User;
+      }>(`${API_URL}/user/profile`, data, config);
 
       if (res.data.success) {
         // Update the profile data if it exists
         const currentProfile = get().profile;
         if (currentProfile && res.data.data) {
+          const user = res.data.data;
+          setToLocalStorage("user", user);
+          useAuthStore.getInitialState().user = user;
           set({
             profile: {
               ...currentProfile,
-              user: res.data.data
-            },
-            isLoading: false
+              user: user,
+            }
           });
-        } else {
-          set({ isLoading: false });
-        }
-        return { success: true, message: res.data.message || "Profile updated successfully" };
+        } 
+        return {
+          success: true,
+          message: res.data.message || "Profile updated successfully",
+        };
       } else {
-        set({ error: res.data.message || "Failed to update profile", isLoading: false });
-        return { success: false, message: res.data.message || "Failed to update profile" };
+        set({
+          error: res.data.message || "Failed to update profile",
+
+        });
+        return {
+          success: false,
+          message: res.data.message || "Failed to update profile",
+        };
       }
     } catch (error) {
       console.error("Update profile error:", error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to update profile";
-      set({ error: errorMessage, isLoading: false });
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to update profile";
+      set({ error: errorMessage });
       return { success: false, message: errorMessage };
     }
   },
