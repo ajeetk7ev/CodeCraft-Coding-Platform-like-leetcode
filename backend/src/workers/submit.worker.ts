@@ -7,6 +7,9 @@ import { submitToJudge0, pollJudge0Result, mapJudge0StatusToVerdict } from "../u
 import { SupportedLanguage } from "../models/submission/Language";
 import { Verdict } from "../models/submission/verdict";
 import { SubmissionStatus } from "../models/submission/SubmissionStatus";
+import { Stats } from "../models/user/Stats";
+import { RecentSubmission } from "../models/user/RecentSubmission";
+import { Problem } from "../models/problem/Problem";
 
 interface SubmitJobData {
   submissionId: string;
@@ -113,6 +116,46 @@ export const submitWorker = new Worker<SubmitJobData, void>(
         totalMemory: maxMemory,
         testcaseResults,
       });
+
+      // Get submission to access user and problem
+      const submission = await Submission.findById(submissionId).populate('user problem');
+
+      if (finalVerdict === Verdict.ACCEPTED && submission) {
+        // Update user stats
+        const userId = submission.user;
+        const problemId = submission.problem;
+        const problemDifficulty = (submission.problem as any).difficulty;
+
+        // Check if user has already solved this problem
+        const existingRecentSubmission = await RecentSubmission.findOne({
+          user: userId,
+          problem: problemId
+        });
+
+        // Only update stats if this is the first time solving this problem
+        if (!existingRecentSubmission) {
+          const stats = await Stats.findOneAndUpdate(
+            { user: userId },
+            {
+              $inc: {
+                totalSolved: 1,
+                [problemDifficulty + 'Solved']: 1
+              }
+            },
+            { new: true, upsert: true }
+          );
+        }
+
+        // Add/update recent submissions (always update timestamp)
+        await RecentSubmission.findOneAndUpdate(
+          { user: userId, problem: problemId },
+          {
+            status: 'Accepted',
+            submittedAt: new Date()
+          },
+          { upsert: true, new: true }
+        );
+      }
 
       // Update problem stats
       const stats = await ProblemStats.findOne({ problem: problemId });

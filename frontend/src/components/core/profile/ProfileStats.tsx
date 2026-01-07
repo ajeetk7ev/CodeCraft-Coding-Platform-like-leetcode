@@ -1,14 +1,20 @@
 // src/components/profile/ProfileStats.tsx
-import { stats } from "@/data/profile.mock";
+import { useProfileStore } from "@/stores/profileStore";
 
 export default function ProfileStats() {
+  const { profile } = useProfileStore();
+
+  if (!profile) return null;
+
+  const { stats } = profile;
+
   return (
     <div className="grid grid-cols-4 gap-4">
       {[
-        { label: "Solved", value: stats.solved },
-        { label: "Easy", value: stats.easy, color: "text-green-400" },
-        { label: "Medium", value: stats.medium, color: "text-yellow-400" },
-        { label: "Hard", value: stats.hard, color: "text-red-400" },
+        { label: "Solved", value: stats.totalSolved },
+        { label: "Easy", value: stats.easySolved, color: "text-green-400" },
+        { label: "Medium", value: stats.mediumSolved, color: "text-yellow-400" },
+        { label: "Hard", value: stats.hardSolved, color: "text-red-400" },
       ].map((item) => (
         <div
           key={item.label}

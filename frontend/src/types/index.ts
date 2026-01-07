@@ -6,12 +6,37 @@ export interface User{
   fullName: string;
   email: string;
   
-  gender?: "male" | "female" | "other";
+  gender?: string;
   github?: string;
   linkedin?: string;
   avatar?: string;
   bio?: string;
   role: "user" | "admin";
+}
+
+export interface UserStats {
+  totalSolved: number;
+  easySolved: number;
+  mediumSolved: number;
+  hardSolved: number;
+}
+
+export interface SubmissionActivity {
+  date: string;
+  status: string;
+}
+
+export interface RecentProblem {
+  title: string;
+  difficulty: "Easy" | "Medium" | "Hard";
+  date: string;
+}
+
+export interface ProfileData {
+  user: User;
+  stats: UserStats;
+  submissions: SubmissionActivity[];
+  recentProblems: RecentProblem[];
 }
 
 

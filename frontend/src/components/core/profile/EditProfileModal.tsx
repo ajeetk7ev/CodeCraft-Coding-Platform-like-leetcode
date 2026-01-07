@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { user as mockUser } from "@/data/profile.mock";
+import { useProfileStore } from "@/stores/profileStore";
 import { Camera } from "lucide-react";
 
 interface Props {
@@ -19,17 +19,35 @@ interface Props {
 }
 
 export default function EditProfileModal({ open, onClose }: Props) {
+  const { profile, updateProfile } = useProfileStore();
   const fileRef = useRef<HTMLInputElement | null>(null);
 
   const [form, setForm] = useState({
-    fullName: mockUser.fullName,
-    username: mockUser.username,
-    gender: mockUser.gender || "other",
-    bio: mockUser.bio || "",
-    avatar: mockUser.avatar || "",
-    github: mockUser.github || "",
-    linkedin: mockUser.linkedin || "",
+    fullName: profile?.user.fullName || "",
+    username: profile?.user.username || "",
+    gender: profile?.user.gender || "other",
+    bio: profile?.user.bio || "",
+    avatar: profile?.user.avatar || "",
+    github: profile?.user.github || "",
+    linkedin: profile?.user.linkedin || "",
   });
+
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  // Update form when profile data changes
+  React.useEffect(() => {
+    if (profile) {
+      setForm({
+        fullName: profile.user.fullName,
+        username: profile.user.username,
+        gender: profile.user.gender || "other",
+        bio: profile.user.bio || "",
+        avatar: profile.user.avatar || "",
+        github: profile.user.github || "",
+        linkedin: profile.user.linkedin || "",
+      });
+    }
+  }, [profile]);
 
   function handleChange(
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -45,10 +63,28 @@ export default function EditProfileModal({ open, onClose }: Props) {
     setForm({ ...form, avatar: previewUrl });
   }
 
-  function handleSave() {
-    console.log("Updated Profile Payload 👉", form);
-    // later: upload avatar → get URL → PATCH /users/me
-    onClose();
+  async function handleSave() {
+    setIsUpdating(true);
+    try {
+      const result = await updateProfile({
+        fullName: form.fullName,
+        gender: form.gender as "male" | "female" | "other",
+        bio: form.bio,
+        avatar: form.avatar,
+        github: form.github,
+        linkedin: form.linkedin,
+      });
+
+      if (result.success) {
+        onClose();
+      } else {
+        console.error("Failed to update profile:", result.message);
+      }
+    } catch (error) {
+      console.error("Error updating profile:", error);
+    } finally {
+      setIsUpdating(false);
+    }
   }
 
   return (
@@ -65,7 +101,7 @@ export default function EditProfileModal({ open, onClose }: Props) {
             onClick={() => fileRef.current?.click()}
           >
             <img
-              src={form.avatar}
+              src={form.avatar || "https://i.pravatar.cc/150?img=12"}
               className="w-28 h-28 rounded-full border-4 border-gray-800 object-cover"
             />
 
@@ -95,7 +131,16 @@ export default function EditProfileModal({ open, onClose }: Props) {
             />
           </div>
 
-
+          <div className="space-y-1.5">
+            <Label>Username</Label>
+            <Input
+              name="username"
+              value={form.username}
+              onChange={handleChange}
+              className="bg-gray-900 border-gray-700"
+              disabled
+            />
+          </div>
 
           <div className="space-y-1.5">
             <Label>Gender</Label>
@@ -145,10 +190,12 @@ export default function EditProfileModal({ open, onClose }: Props) {
         </div>
 
         <DialogFooter className="mt-5">
-          <Button variant="secondary" onClick={onClose}>
+          <Button variant="secondary" onClick={onClose} disabled={isUpdating}>
             Cancel
           </Button>
-          <Button onClick={handleSave}>Save Changes</Button>
+          <Button onClick={handleSave} disabled={isUpdating}>
+            {isUpdating ? "Saving..." : "Save Changes"}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
