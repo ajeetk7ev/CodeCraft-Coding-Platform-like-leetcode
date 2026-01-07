@@ -148,13 +148,21 @@ export default function Navbar() {
 /* ---------------- Desktop Nav Item ---------------- */
 
 function NavItem({ label, to }: { label: string; to: string }) {
+  const location = useLocation();
+  const isActive = location.pathname.startsWith(to);
+
   return (
     <Link
       to={to}
-      className="group relative text-gray-400 hover:text-white transition"
+      className={`group relative transition ${
+        isActive ? "text-white" : "text-gray-400 hover:text-white"
+      }`}
     >
       {label}
-      <span className="absolute left-0 -bottom-1 h-0.5 w-0 bg-indigo-500 transition-all group-hover:w-full" />
+      <span
+        className={`absolute left-0 -bottom-1 h-0.5 bg-indigo-500 transition-all
+        ${isActive ? "w-full" : "w-0 group-hover:w-full"}`}
+      />
     </Link>
   );
 }
@@ -203,13 +211,21 @@ function MobileNavItem({
   label: string;
   onClick: () => void;
 }) {
+  const location = useLocation();
+  const isActive = location.pathname.startsWith(to);
+
   return (
     <Link
       to={to}
       onClick={onClick}
-      className="text-gray-300 hover:text-white text-lg transition"
+      className={`text-lg transition ${
+        isActive
+          ? "text-white font-semibold"
+          : "text-gray-300 hover:text-white"
+      }`}
     >
       {label}
     </Link>
   );
 }
+

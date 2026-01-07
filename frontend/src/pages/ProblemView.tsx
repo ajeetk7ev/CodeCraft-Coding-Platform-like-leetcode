@@ -136,6 +136,7 @@ export default function ProblemView() {
 
   return (
     <div ref={rootRef} className="fixed inset-0 flex bg-gray-900 text-gray-100">
+      
       {/* LEFT */}
       <div
         style={{ width: `${leftWidth}%` }}

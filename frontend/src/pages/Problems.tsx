@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/stores/authStore";
 import axios from "axios";
 import { API_URL } from "@/utils/api";
+import Navbar from "@/components/common/Navbar";
 
 export default function Problems() {
   const navigate = useNavigate();
@@ -58,6 +59,7 @@ export default function Problems() {
   /* ---------------- RENDER ---------------- */
   return (
     <div className="bg-gray-950 min-h-screen text-gray-100">
+      <Navbar/>
       <div className="max-w-5xl mx-auto px-6 py-10">
         {loading ? (
           <>
