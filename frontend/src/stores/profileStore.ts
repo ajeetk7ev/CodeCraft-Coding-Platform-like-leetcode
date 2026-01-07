@@ -45,7 +45,6 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
         },
       });
 
-      console.log("Profile fetch response:", res);
 
       if (res.data.success && res.data.data) {
         console.log("Profile data received:", res.data.data);
@@ -66,7 +65,7 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
     set({ isLoading: true, error: null });
 
     try {
-      const token = localStorage.getItem("token");
+       const token = getFromLocalStorage("token");
       const res = await axios.put<{ success: boolean; message: string; data?: User }>(
         `${API_URL}/user/profile`,
         data,

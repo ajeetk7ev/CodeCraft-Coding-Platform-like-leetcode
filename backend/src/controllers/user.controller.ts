@@ -117,7 +117,9 @@ export const getProfile = async (req: Request, res: Response) => {
 
 export const updateProfile = async (req: Request, res: Response) => {
   try {
+    
     const user = (req as any).user;
+    console.log("Update Profile Request Body:", req.body);
     const { fullName, gender, bio, avatar, github, linkedin } = req.body;
 
     const updatedUser = await User.findByIdAndUpdate(

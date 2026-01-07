@@ -24,7 +24,6 @@ export default function EditProfileModal({ open, onClose }: Props) {
 
   const [form, setForm] = useState({
     fullName: profile?.user.fullName || "",
-    username: profile?.user.username || "",
     gender: profile?.user.gender || "other",
     bio: profile?.user.bio || "",
     avatar: profile?.user.avatar || "",
@@ -39,7 +38,6 @@ export default function EditProfileModal({ open, onClose }: Props) {
     if (profile) {
       setForm({
         fullName: profile.user.fullName,
-        username: profile.user.username,
         gender: profile.user.gender || "other",
         bio: profile.user.bio || "",
         avatar: profile.user.avatar || "",
@@ -128,17 +126,6 @@ export default function EditProfileModal({ open, onClose }: Props) {
               value={form.fullName}
               onChange={handleChange}
               className="bg-gray-900 border-gray-700"
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <Label>Username</Label>
-            <Input
-              name="username"
-              value={form.username}
-              onChange={handleChange}
-              className="bg-gray-900 border-gray-700"
-              disabled
             />
           </div>
 
