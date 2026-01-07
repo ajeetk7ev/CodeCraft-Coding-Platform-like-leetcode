@@ -19,7 +19,7 @@ interface Props {
 }
 
 export default function EditProfileModal({ open, onClose }: Props) {
-  const { profile, updateProfile } = useProfileStore();
+  const { profile, updateProfile, isLoading } = useProfileStore();
   const fileRef = useRef<HTMLInputElement | null>(null);
 
   const [form, setForm] = useState({
@@ -62,31 +62,42 @@ export default function EditProfileModal({ open, onClose }: Props) {
   }
 
   async function handleSave() {
+    const formData = new FormData();
+    formData.append("fullName", form.fullName);
+    formData.append("gender", form.gender);
+    formData.append("bio", form.bio);
+    formData.append("github", form.github);
+    formData.append("linkedin", form.linkedin);
+    
+    if (fileRef.current?.files?.[0]) {
+      formData.append("avatar", fileRef.current.files[0]);
+    }
     setIsUpdating(true);
     try {
-      const result = await updateProfile({
-        fullName: form.fullName,
-        gender: form.gender as "male" | "female" | "other",
-        bio: form.bio,
-        avatar: form.avatar,
-        github: form.github,
-        linkedin: form.linkedin,
-      });
+      const result = await updateProfile(formData);
 
       if (result.success) {
-        onClose();
+        console.log("Profile updated successfully, closing modal");
+       
       } else {
         console.error("Failed to update profile:", result.message);
+        alert(`Failed to update profile: ${result.message}`);
       }
     } catch (error) {
       console.error("Error updating profile:", error);
+      alert("An error occurred while updating profile. Please try again.");
     } finally {
       setIsUpdating(false);
     }
   }
 
+  const handleClose = () => {
+    console.log("Modal close requested");
+    onClose();
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onClose} >
+    <Dialog open={open} onOpenChange={handleClose} >
       <DialogContent className="bg-gray-950 border border-gray-800 text-gray-200 max-w-lg max-h-[90vh]">
         <DialogHeader>
           <DialogTitle>Edit Profile</DialogTitle>
@@ -177,11 +188,11 @@ export default function EditProfileModal({ open, onClose }: Props) {
         </div>
 
         <DialogFooter className="mt-5">
-          <Button variant="secondary" onClick={onClose} disabled={isUpdating}>
+          <Button variant="secondary" onClick={onClose} disabled={isLoading}>
             Cancel
           </Button>
-          <Button onClick={handleSave} disabled={isUpdating}>
-            {isUpdating ? "Saving..." : "Save Changes"}
+          <Button onClick={handleSave} disabled={isLoading}>
+            {isLoading ? "Saving..." : "Save Changes"}
           </Button>
         </DialogFooter>
       </DialogContent>

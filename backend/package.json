@@ -13,6 +13,7 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@types/multer": "^2.0.0",
     "axios": "^1.13.2",
     "bcryptjs": "^3.0.3",
     "bullmq": "^5.66.1",
@@ -23,6 +24,7 @@
     "ioredis": "^5.8.2",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^8.18.1",
+    "multer": "^2.0.2",
     "redis": "^5.10.0",
     "zod": "^4.1.13"
   },

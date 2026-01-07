@@ -5,6 +5,7 @@ import { User } from "../models/user/User";
 import { Request, Response } from "express";
 import Submission from "../models/submission/Submission";
 import { Problem } from "../models/problem/Problem";
+import uploadImageToCloudinary from "../utils/imageUpload";
 
 export const getProfile = async (req: Request, res: Response) => {
   try {
@@ -119,8 +120,25 @@ export const updateProfile = async (req: Request, res: Response) => {
   try {
     
     const user = (req as any).user;
-    console.log("Update Profile Request Body:", req.body);
-    const { fullName, gender, bio, avatar, github, linkedin } = req.body;
+    const { fullName, gender, bio, github, linkedin } = req.body;
+
+    let avatarUrl;
+
+    if((req as any).file) {
+      const file = (req as any).file;
+      console.log("File object:", file);
+      console.log("File path:", file.path);
+      console.log("File buffer:", !!file.buffer);
+      try {
+        const result = await uploadImageToCloudinary(file, "avatars");
+        avatarUrl = result.secure_url;
+        // No need to clean up for memory storage
+      } catch (uploadError) {
+        console.log("Upload error:", uploadError);
+        throw uploadError;
+      }
+    }
+
 
     const updatedUser = await User.findByIdAndUpdate(
       user._id,
@@ -128,7 +146,7 @@ export const updateProfile = async (req: Request, res: Response) => {
         fullName,
         gender,
         bio,
-        avatar,
+        avatar: avatarUrl ? avatarUrl : user.avatar,
         github,
         linkedin
       },

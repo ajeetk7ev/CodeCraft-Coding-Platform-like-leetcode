@@ -25,7 +25,7 @@ interface ProfileState {
   error: string | null;
 
   fetchProfile: () => Promise<void>;
-  updateProfile: (data: UpdateProfileRequest) => Promise<{ success: boolean; message: string }>;
+  updateProfile: (data: FormData | UpdateProfileRequest) => Promise<{ success: boolean; message: string }>;
 }
 
 export const useProfileStore = create<ProfileState>((set, get) => ({
@@ -61,19 +61,26 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
     }
   },
 
-  updateProfile: async (data: UpdateProfileRequest) => {
+  updateProfile: async (data: FormData | UpdateProfileRequest) => {
     set({ isLoading: true, error: null });
 
     try {
        const token = getFromLocalStorage("token");
+      const config = {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      };
+
+      // If data is FormData, don't set Content-Type (let axios set it automatically)
+      if (!(data instanceof FormData)) {
+        (config.headers as any)['Content-Type'] = 'application/json';
+      }
+
       const res = await axios.put<{ success: boolean; message: string; data?: User }>(
         `${API_URL}/user/profile`,
         data,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+        config
       );
 
       if (res.data.success) {
