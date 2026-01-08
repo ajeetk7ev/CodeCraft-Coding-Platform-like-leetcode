@@ -5,6 +5,8 @@ import Login from "./pages/Login"
 import Problems from "./pages/Problems"
 import ProblemView from "./pages/ProblemView"
 import Profile from "./pages/Profile"
+import Admin from "./pages/Admin"
+import NotFound from "./pages/NotFound"
 
 
 function App() {
@@ -17,6 +19,8 @@ function App() {
       <Route path="/problems" element={<Problems/>}/>
       <Route path="/problems/:slug" element={<ProblemView/>}/>
       <Route path="/profile/:username" element={<Profile/>}/>
+      <Route path="/admin" element={<Admin/>}/>
+      <Route path="*" element={<NotFound />} />
    </Routes>
    </div>
   )

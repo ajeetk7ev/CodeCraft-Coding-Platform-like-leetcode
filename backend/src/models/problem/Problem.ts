@@ -5,6 +5,7 @@ export interface IProblem extends Document {
   slug: string;
   difficulty: "easy" | "medium" | "hard";
   createdBy: Types.ObjectId;
+  published: boolean;
 }
 
 const problemSchema = new Schema<IProblem>(
@@ -19,6 +20,7 @@ const problemSchema = new Schema<IProblem>(
     },
 
     createdBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    published: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

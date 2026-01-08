@@ -198,6 +198,8 @@ export const createProblem = async (req: Request, res: Response) => {
 export const getProblems = async (req: Request, res: Response) => {
   try {
     const { difficulty, page = 1, limit = 10, search } = req.query;
+    const user = (req as any).user;
+    const isAdmin = user?.role === "admin";
 
     // Build query
     const query: any = {};
@@ -209,6 +211,11 @@ export const getProblems = async (req: Request, res: Response) => {
         { title: { $regex: search as string, $options: "i" } },
         { slug: { $regex: search as string, $options: "i" } },
       ];
+    }
+
+    // Only show published problems to non-admin users
+    if (!isAdmin) {
+      query.published = true;
     }
 
     // Pagination

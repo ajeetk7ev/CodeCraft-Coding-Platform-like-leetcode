@@ -8,7 +8,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { User, LogOut, ChevronDown } from "lucide-react";
+import { User, LogOut, ChevronDown, Shield } from "lucide-react";
 
 import {
   Sheet,
@@ -97,6 +97,24 @@ export default function Navbar() {
                     Profile
                   </Link>
                 </DropdownMenuItem>
+
+                {/* ADMIN - Only show for admin users */}
+                {user.role === "admin" && (
+                  <DropdownMenuItem asChild>
+                    <Link
+                      to="/admin"
+                      className="
+            flex items-center gap-2 rounded-md px-2 py-2
+            text-gray-200
+            hover:bg-gray-800 hover:text-white
+            focus:bg-gray-800 focus:text-white
+          "
+                    >
+                      <Shield className="h-4 w-4" />
+                      Admin Panel
+                    </Link>
+                  </DropdownMenuItem>
+                )}
 
                 <DropdownMenuSeparator className="bg-gray-800 my-1" />
 

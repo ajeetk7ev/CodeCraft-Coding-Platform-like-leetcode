@@ -13,6 +13,7 @@ export interface IUser extends Document {
   bio?: string;
 
   role: "user" | "admin";
+  banned: boolean;
 
   emailVerified: boolean;
   verificationToken?: string;
@@ -40,6 +41,7 @@ const userSchema = new Schema<IUser>(
     bio: { type: String, default: "" },
 
     role: { type: String, enum: ["user", "admin"], default: "user" },
+    banned: { type: Boolean, default: false },
 
     emailVerified: { type: Boolean, default: false },
     verificationToken: String,

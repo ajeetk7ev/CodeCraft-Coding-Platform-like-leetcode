@@ -57,6 +57,8 @@ export const useAuthStore = create<AuthState>((set) => ({
       setToLocalStorage("user", user);
       setToLocalStorage("token", token);
       set({ user, token });
+      // Set axios default headers
+      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 
       return { success: true, message };
     } catch (error: any) {
@@ -85,6 +87,8 @@ export const useAuthStore = create<AuthState>((set) => ({
       setToLocalStorage("user", user);
       setToLocalStorage("token", token);
       set({ user, token });
+      // Set axios default headers
+      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 
       return { success: true, message };
     } catch (error: any) {
@@ -105,6 +109,8 @@ export const useAuthStore = create<AuthState>((set) => ({
 
     if (user && token) {
       set({ user, token });
+      // Set axios default headers
+      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
     }
   },
 
@@ -113,5 +119,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     removeFromLocalStorage("user");
     removeFromLocalStorage("token");
     set({ user: null, token: null });
+    // Remove axios default headers
+    delete axios.defaults.headers.common["Authorization"];
   },
 }));
