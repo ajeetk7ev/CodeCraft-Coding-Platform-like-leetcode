@@ -42,6 +42,8 @@ export default function Problems() {
           }
         );
 
+        console.log("Fetched problems:", res.data);
+
         if (res.data.success) {
           setProblems(res.data.data);
           setTotalPages(res.data.pagination.pages);

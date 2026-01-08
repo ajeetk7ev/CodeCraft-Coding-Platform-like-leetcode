@@ -5,6 +5,7 @@ import {
   getProblem,
   updateProblem,
   deleteProblem,
+  getAdminProblems,
 } from "../controllers/problem.controller";
 import { protect } from "../middlewares/auth.middleware";
 import { isAdmin } from "../middlewares/role.middleware";
@@ -16,6 +17,7 @@ router.get("/", getProblems);
 router.get("/:slug", protect, getProblem);
 
 // Protected routes (admin only)
+router.get("/admin", protect, isAdmin, getAdminProblems);
 router.post("/", protect, isAdmin, createProblem);
 router.put("/:id", protect, isAdmin, updateProblem);
 router.delete("/:id", protect, isAdmin, deleteProblem);

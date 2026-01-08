@@ -1,98 +1,103 @@
 import { useEffect, useState } from "react";
+import Editor from "@monaco-editor/react";
+import { useAuthStore } from "@/stores/authStore";
 import axios from "axios";
-import { API_URL } from "../../utils/api";
+import { API_URL } from "@/utils/api";
 import {
   Eye,
+  Plus,
+  Pencil,
   ToggleLeft,
   ToggleRight,
-  Search,
 } from "lucide-react";
-import { Button } from "../ui/button";
-import { Input } from "../ui/input";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "../ui/dialog";
+} from "@/components/ui/dialog";
 import toast from "react-hot-toast";
+
+/* ---------------- TYPES ---------------- */
+
+interface Testcase {
+  input: string;
+  output: string;
+  isHidden: boolean;
+}
+
+interface Boilerplate {
+  language: string;
+  userCodeTemplate: string;
+  fullCodeTemplate: string;
+}
 
 interface Problem {
   _id: string;
   title: string;
-  slug: string;
   difficulty: "easy" | "medium" | "hard";
   published: boolean;
-  createdBy: {
-    username: string;
-  };
-  createdAt: string;
+  version?: number;
+  slug: string;
 }
 
-interface ProblemDetails extends Problem {
+interface ProblemForm {
+  title: string;
+  difficulty: "easy" | "medium" | "hard";
   description: string;
   constraints: string[];
-  examples: any[];
   tags: string[];
-  stats: {
-    totalSubmissions: number;
-    acceptedSubmissions: number;
-  };
+  companyTags: string[];
+  boilerplates: Boilerplate[];
+  testcases: Testcase[];
 }
 
-const ProblemManagement = () => {
+/* ---------------- COMPONENT ---------------- */
+
+export default function ProblemManagement() {
+  const { token } = useAuthStore();
+
+  const authHeaders = {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  };
+
   const [problems, setProblems] = useState<Problem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [search, setSearch] = useState("");
-  const [selected, setSelected] = useState<ProblemDetails | null>(null);
+
+  const [formOpen, setFormOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
 
+  const [editing, setEditing] = useState<Problem | null>(null);
+  const [previewData, setPreviewData] = useState<ProblemForm | null>(null);
+
+  const [form, setForm] = useState<ProblemForm>({
+    title: "",
+    difficulty: "easy",
+    description: "",
+    constraints: [],
+    tags: [],
+    companyTags: [],
+    boilerplates: [
+      { language: "cpp", userCodeTemplate: "", fullCodeTemplate: "" },
+    ],
+    testcases: [],
+  });
+
+  /* ---------------- API ---------------- */
 
   const fetchProblems = async () => {
     try {
       setLoading(true);
-      setError(null);
-      const params = new URLSearchParams();
-      params.append("limit", "100");
-      if (search) params.append("search", search);
-
-      const res = await axios.get(`${API_URL}/problems?${params}`);
-      console.log(res.data);
+      const res = await axios.get(`${API_URL}/problems`, {
+        ...authHeaders,
+      });
+      console.log("res:", res);
       setProblems(res.data.data);
-    } catch (err) {
-      console.error("Failed to load problems:", err);
-      setError("Failed to load problems. Using demo data.");
-      // Set demo data as fallback
-      setProblems([
-        {
-          _id: "demo1",
-          title: "Two Sum",
-          slug: "two-sum",
-          difficulty: "easy",
-          published: true,
-          createdBy: { username: "admin" },
-          createdAt: new Date().toISOString(),
-        },
-        {
-          _id: "demo2",
-          title: "Add Two Numbers",
-          slug: "add-two-numbers",
-          difficulty: "medium",
-          published: true,
-          createdBy: { username: "admin" },
-          createdAt: new Date().toISOString(),
-        },
-        {
-          _id: "demo3",
-          title: "Longest Substring Without Repeating Characters",
-          slug: "longest-substring-without-repeating-characters",
-          difficulty: "medium",
-          published: false,
-          createdBy: { username: "admin" },
-          createdAt: new Date().toISOString(),
-        },
-      ]);
+    } catch {
       toast.error("Failed to load problems");
     } finally {
       setLoading(false);
@@ -101,147 +106,114 @@ const ProblemManagement = () => {
 
   useEffect(() => {
     fetchProblems();
-  }, [search]);
+  }, []);
 
-
-  const togglePublish = async (id: string, published: boolean) => {
-    try {
-      await axios.patch(`${API_URL}/admin/problems/${id}/publish`, {
-        published: !published,
-      });
-      toast.success(published ? "Unpublished" : "Published");
-      fetchProblems();
-    } catch (err: any) {
-      console.error("Failed to toggle publish status:", err);
-      if (err.response?.status === 401 || err.response?.status === 403) {
-        toast.error("Admin authentication required");
-      } else {
-        toast.error("Action failed");
-      }
-    }
+  const openCreate = () => {
+    setEditing(null);
+    setForm({
+      title: "",
+      difficulty: "easy",
+      description: "",
+      constraints: [],
+      tags: [],
+      companyTags: [],
+      boilerplates: [
+        { language: "cpp", userCodeTemplate: "", fullCodeTemplate: "" },
+      ],
+      testcases: [],
+    });
+    setFormOpen(true);
   };
 
-  const previewProblem = async (slug: string) => {
+  const openEdit = async (problem: Problem) => {
     try {
-      const res = await axios.get(`${API_URL}/problems/${slug}`);
-      setSelected(res.data.data || res.data);
-      setPreviewOpen(true);
+      const res = await axios.get(
+        `${API_URL}/problems/${problem.slug}`,
+        authHeaders
+      );
+      setEditing(problem);
+      setForm(res.data.data);
+      setFormOpen(true);
     } catch {
       toast.error("Failed to load problem");
     }
   };
 
-  const difficultyBadge = (d: string) => {
-    if (d === "easy") return "bg-emerald-500/10 text-emerald-400";
-    if (d === "medium") return "bg-yellow-500/10 text-yellow-400";
-    return "bg-red-500/10 text-red-400";
+  const submitProblem = async () => {
+    try {
+      if (editing) {
+        await axios.put(
+          `${API_URL}/problems/${editing._id}`,
+          form,
+          authHeaders
+        );
+        toast.success("Problem updated (new version)");
+      } else {
+        await axios.post(`${API_URL}/problems`, form, authHeaders);
+        toast.success("Problem created");
+      }
+      setFormOpen(false);
+      fetchProblems();
+    } catch {
+      toast.error("Failed to save problem");
+    }
   };
+
+  const togglePublish = async (id: string, published: boolean) => {
+    try {
+      await axios.patch(
+        `${API_URL}/admin/problems/${id}/publish`,
+        { published: !published },
+        authHeaders
+      );
+      toast.success(published ? "Unpublished" : "Published");
+      fetchProblems();
+    } catch {
+      toast.error("Publish failed");
+    }
+  };
+
+  /* ---------------- UI ---------------- */
 
   return (
     <div className="space-y-6">
-      {/* Search */}
-      <div className="rounded-xl border border-slate-800 bg-slate-900 p-4">
-        <div className="relative max-w-md">
-          <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
-          <Input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search problems..."
-            className="pl-9 bg-slate-950 border-slate-800"
-          />
-        </div>
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <h2 className="text-xl font-semibold">Problem Management</h2>
+        <Button onClick={openCreate}>
+          <Plus className="h-4 w-4 mr-2" />
+          Create Problem
+        </Button>
       </div>
 
-      {/* Error Display */}
-      {error && (
-        <div className="rounded-xl border border-yellow-500/20 bg-yellow-500/10 p-4">
-          <div className="flex items-center gap-2 text-yellow-400">
-            <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-            </svg>
-            <span className="text-sm font-medium">{error}</span>
-          </div>
-        </div>
-      )}
-
       {/* Table */}
-      <div className="rounded-xl border border-slate-800 bg-slate-900 overflow-hidden">
+      <div className="rounded-xl border border-slate-800 bg-slate-900">
         <table className="min-w-full text-sm">
-          <thead className="bg-slate-800 text-slate-400 uppercase text-xs">
+          <thead className="bg-slate-800 text-slate-400">
             <tr>
-              <th className="px-6 py-3 text-left">Problem</th>
+              <th className="px-6 py-3 text-left">Title</th>
               <th className="px-6 py-3">Difficulty</th>
               <th className="px-6 py-3">Status</th>
-              <th className="px-6 py-3">Created By</th>
-              <th className="px-6 py-3">Created</th>
               <th className="px-6 py-3 text-right">Actions</th>
             </tr>
           </thead>
 
           <tbody className="divide-y divide-slate-800">
-            {loading ? (
-              <tr>
-                <td colSpan={6} className="px-6 py-8 text-center text-slate-400">
-                  <div className="flex items-center justify-center gap-2">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-slate-400"></div>
-                    Loading problems...
-                  </div>
-                </td>
-              </tr>
-            ) : problems.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="px-6 py-8 text-center text-slate-400">
-                  No problems found
-                </td>
-              </tr>
-            ) : (
+            {!loading &&
               problems.map((p) => (
-                <tr
-                  key={p._id}
-                  className="hover:bg-slate-800/60 transition"
-                >
+                <tr key={p._id}>
+                  <td className="px-6 py-4">{p.title}</td>
+                  <td className="px-6 py-4 capitalize">{p.difficulty}</td>
                   <td className="px-6 py-4">
-                    <div className="font-medium">{p.title}</div>
-                    <div className="text-xs text-slate-400">/{p.slug}</div>
+                    {p.published ? "Published" : "Draft"}
                   </td>
-
-                  <td className="px-6 py-4">
-                    <span
-                      className={`rounded-full px-2 py-1 text-xs font-medium ${difficultyBadge(
-                        p.difficulty
-                      )}`}
-                    >
-                      {p.difficulty}
-                    </span>
-                  </td>
-
-                  <td className="px-6 py-4">
-                    <span
-                      className={`rounded-full px-2 py-1 text-xs font-medium ${
-                        p.published
-                          ? "bg-emerald-500/10 text-emerald-400"
-                          : "bg-slate-700 text-slate-300"
-                      }`}
-                    >
-                      {p.published ? "Published" : "Draft"}
-                    </span>
-                  </td>
-
-                  <td className="px-6 py-4 text-slate-400">
-                    {p.createdBy.username}
-                  </td>
-
-                  <td className="px-6 py-4 text-slate-400">
-                    {new Date(p.createdAt).toLocaleDateString()}
-                  </td>
-
                   <td className="px-6 py-4 text-right space-x-2">
                     <Button
                       size="icon"
                       variant="ghost"
-                      onClick={() => previewProblem(p.slug)}
+                      onClick={() => openEdit(p)}
                     >
-                      <Eye className="h-4 w-4" />
+                      <Pencil className="h-4 w-4" />
                     </Button>
 
                     <Button
@@ -252,98 +224,177 @@ const ProblemManagement = () => {
                       {p.published ? (
                         <ToggleRight className="h-5 w-5 text-emerald-400" />
                       ) : (
-                        <ToggleLeft className="h-5 w-5 text-slate-400" />
+                        <ToggleLeft className="h-5 w-5" />
                       )}
+                    </Button>
+
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => {
+                        setPreviewData(form);
+                        setPreviewOpen(true);
+                      }}
+                    >
+                      <Eye className="h-4 w-4" />
                     </Button>
                   </td>
                 </tr>
-              ))
-            )}
+              ))}
           </tbody>
         </table>
       </div>
 
-      {/* Preview Dialog */}
-      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
-        <DialogContent className="max-w-4xl bg-slate-900 border border-slate-800">
+      {/* ---------------- CREATE / EDIT ---------------- */}
+      <Dialog open={formOpen} onOpenChange={setFormOpen}>
+        <DialogContent className="max-w-6xl bg-slate-900">
           <DialogHeader>
-            <DialogTitle>Problem Preview</DialogTitle>
+            <DialogTitle>
+              {editing ? "Edit Problem" : "Create Problem"}
+            </DialogTitle>
           </DialogHeader>
 
-          {selected && (
-            <div className="space-y-6">
-              <div>
-                <h2 className="text-xl font-semibold">{selected.title}</h2>
-                <div className="flex gap-3 mt-2">
-                  <span
-                    className={`rounded-full px-2 py-1 text-xs ${difficultyBadge(
-                      selected.difficulty
-                    )}`}
-                  >
-                    {selected.difficulty}
-                  </span>
-                  <span className="text-xs text-slate-400">
-                    By {selected.createdBy.username}
-                  </span>
-                </div>
-              </div>
+          <div className="space-y-4">
+            <Input
+              placeholder="Problem title"
+              value={form.title}
+              onChange={(e) =>
+                setForm({ ...form, title: e.target.value })
+              }
+            />
 
-              <div className="prose prose-invert max-w-none text-sm">
-                <div
-                  dangerouslySetInnerHTML={{
-                    __html: selected.description,
+            <textarea
+              className="w-full h-32 bg-slate-950 border border-slate-800 rounded p-3"
+              placeholder="Problem description (HTML supported)"
+              value={form.description}
+              onChange={(e) =>
+                setForm({ ...form, description: e.target.value })
+              }
+            />
+
+            <Input
+              placeholder="Tags (comma separated)"
+              value={form.tags.join(",")}
+              onChange={(e) =>
+                setForm({ ...form, tags: e.target.value.split(",") })
+              }
+            />
+
+            <Input
+              placeholder="Company tags"
+              value={form.companyTags.join(",")}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  companyTags: e.target.value.split(","),
+                })
+              }
+            />
+
+            {/* Monaco Editors */}
+            <Editor
+              height="180px"
+              language="cpp"
+              theme="vs-dark"
+              value={form.boilerplates[0].userCodeTemplate}
+              onChange={(v) =>
+                setForm({
+                  ...form,
+                  boilerplates: [
+                    {
+                      ...form.boilerplates[0],
+                      userCodeTemplate: v || "",
+                    },
+                  ],
+                })
+              }
+            />
+
+            <Editor
+              height="180px"
+              language="cpp"
+              theme="vs-dark"
+              value={form.boilerplates[0].fullCodeTemplate}
+              onChange={(v) =>
+                setForm({
+                  ...form,
+                  boilerplates: [
+                    {
+                      ...form.boilerplates[0],
+                      fullCodeTemplate: v || "",
+                    },
+                  ],
+                })
+              }
+            />
+
+            {/* Testcases */}
+            <Button
+              variant="outline"
+              onClick={() =>
+                setForm({
+                  ...form,
+                  testcases: [
+                    ...form.testcases,
+                    { input: "", output: "", isHidden: false },
+                  ],
+                })
+              }
+            >
+              + Add Testcase
+            </Button>
+
+            {form.testcases.map((tc, i) => (
+              <div key={i} className="grid grid-cols-2 gap-3">
+                <textarea
+                  className="bg-slate-950 border border-slate-800 rounded p-2"
+                  placeholder="Input"
+                  value={tc.input}
+                  onChange={(e) => {
+                    const t = [...form.testcases];
+                    t[i].input = e.target.value;
+                    setForm({ ...form, testcases: t });
+                  }}
+                />
+                <textarea
+                  className="bg-slate-950 border border-slate-800 rounded p-2"
+                  placeholder="Output"
+                  value={tc.output}
+                  onChange={(e) => {
+                    const t = [...form.testcases];
+                    t[i].output = e.target.value;
+                    setForm({ ...form, testcases: t });
                   }}
                 />
               </div>
+            ))}
 
-              {selected.constraints?.length > 0 && (
-                <div>
-                  <h4 className="font-medium mb-2">Constraints</h4>
-                  <ul className="list-disc list-inside text-sm text-slate-300">
-                    {selected.constraints.map((c, i) => (
-                      <li key={i}>{c}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {selected.tags?.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {selected.tags.map((t, i) => (
-                    <span
-                      key={i}
-                      className="rounded-full bg-indigo-500/10 text-indigo-400 px-2 py-1 text-xs"
-                    >
-                      {t}
-                    </span>
-                  ))}
-                </div>
-              )}
-
-              <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-800">
-                <div className="rounded-lg bg-slate-800 p-4 text-center">
-                  <div className="text-xl font-bold">
-                    {selected.stats.totalSubmissions}
-                  </div>
-                  <div className="text-xs text-slate-400">
-                    Submissions
-                  </div>
-                </div>
-                <div className="rounded-lg bg-slate-800 p-4 text-center">
-                  <div className="text-xl font-bold">
-                    {selected.stats.acceptedSubmissions}
-                  </div>
-                  <div className="text-xs text-slate-400">
-                    Accepted
-                  </div>
-                </div>
-              </div>
+            <div className="flex justify-end gap-3">
+              <Button variant="ghost" onClick={() => setFormOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={submitProblem}>
+                {editing ? "Update" : "Create"}
+              </Button>
             </div>
-          )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ---------------- DRAFT PREVIEW ---------------- */}
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="max-w-4xl bg-slate-900">
+          <DialogHeader>
+            <DialogTitle>Draft Preview</DialogTitle>
+          </DialogHeader>
+          <div
+            className="prose prose-invert"
+            dangerouslySetInnerHTML={{
+              __html: previewData?.description || "",
+            }}
+          />
         </DialogContent>
       </Dialog>
     </div>
   );
-};
-
-export default ProblemManagement;
+}

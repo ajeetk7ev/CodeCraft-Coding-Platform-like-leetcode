@@ -198,14 +198,18 @@ export const createProblem = async (req: Request, res: Response) => {
 export const getProblems = async (req: Request, res: Response) => {
   try {
     const { difficulty, page = 1, limit = 10, search } = req.query;
-    const user = (req as any).user;
-    const isAdmin = user?.role === "admin";
+
 
     // Build query
     const query: any = {};
     if (difficulty && ["easy", "medium", "hard"].includes(difficulty as string)) {
       query.difficulty = difficulty;
     }
+
+    query.published = true;
+    
+    
+
     if (search) {
       query.$or = [
         { title: { $regex: search as string, $options: "i" } },
@@ -213,11 +217,7 @@ export const getProblems = async (req: Request, res: Response) => {
       ];
     }
 
-    // Only show published problems to non-admin users
-    if (!isAdmin) {
-      query.published = true;
-    }
-
+   
     // Pagination
     const pageNum = parseInt(page as string, 10);
     const limitNum = parseInt(limit as string, 10);
@@ -246,6 +246,59 @@ export const getProblems = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.log("Error in getProblems", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
+  }
+};
+
+
+export const getAdminProblems = async (req: Request, res: Response) => {
+  try {
+    const { difficulty, page = 1, limit = 10, search } = req.query;
+
+    // Build query
+    const query: any = {};
+    if (difficulty && ["easy", "medium", "hard"].includes(difficulty as string)) {
+      query.difficulty = difficulty;
+    }
+    if (search) {
+      query.$or = [
+        { title: { $regex: search as string, $options: "i" } },
+        { slug: { $regex: search as string, $options: "i" } },
+      ];
+    }
+
+   
+    // Pagination
+    const pageNum = parseInt(page as string, 10);
+    const limitNum = parseInt(limit as string, 10);
+    const skip = (pageNum - 1) * limitNum;
+
+    // Get problems with pagination
+    const problems = await Problem.find(query)
+      .select("-__v")
+      .populate("createdBy", "username email")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limitNum);
+
+    // Get total count
+    const total = await Problem.countDocuments(query);
+
+    return res.json({
+      success: true,
+      data: problems,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        pages: Math.ceil(total / limitNum),
+      },
+    });
+  } catch (error) {
+    console.log("Error in getAdminProblems", error);
     return res.status(500).json({
       success: false,
       message: "Server error",

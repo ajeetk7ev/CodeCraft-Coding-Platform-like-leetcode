@@ -4,6 +4,7 @@ import Home from "./pages/Home";
 import Signup from "./pages/Signup";
 import Login from "./pages/Login";
 import Problems from "./pages/Problems";
+import ProblemsList from "./pages/admin/ProblemsList";
 import ProblemView from "./pages/ProblemView";
 import Profile from "./pages/Profile";
 import Admin from "./pages/admin/Admin";
@@ -35,7 +36,7 @@ function App() {
           <Route index element={<Dashboard />} />
           <Route path="analytics" element={<Analytics />} />
           <Route path="users" element={<Users />} />
-          <Route path="problems" element={<Problems />} />
+          <Route path="problems" element={<ProblemsList />} />
           <Route path="settings" element={<Settings />} />
         </Route>
 
