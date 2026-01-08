@@ -1,7 +1,12 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { API_URL } from "../../utils/api";
-import { Eye, ToggleLeft, ToggleRight, Search } from "lucide-react";
+import {
+  Eye,
+  ToggleLeft,
+  ToggleRight,
+  Search,
+} from "lucide-react";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import {
@@ -9,7 +14,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "../ui/dialog";
 import toast from "react-hot-toast";
 
@@ -21,7 +25,6 @@ interface Problem {
   published: boolean;
   createdBy: {
     username: string;
-    email: string;
   };
   createdAt: string;
 }
@@ -30,10 +33,7 @@ interface ProblemDetails extends Problem {
   description: string;
   constraints: string[];
   examples: any[];
-  testcases: any[];
-  boilerplates: any[];
   tags: string[];
-  companyTags: string[];
   stats: {
     totalSubmissions: number;
     acceptedSubmissions: number;
@@ -43,279 +43,298 @@ interface ProblemDetails extends Problem {
 const ProblemManagement = () => {
   const [problems, setProblems] = useState<Problem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedProblem, setSelectedProblem] = useState<ProblemDetails | null>(null);
-  const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [selected, setSelected] = useState<ProblemDetails | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
-  useEffect(() => {
-    fetchProblems();
-  }, [searchTerm]);
 
   const fetchProblems = async () => {
     try {
+      setLoading(true);
+      setError(null);
       const params = new URLSearchParams();
-      params.append("limit", "100"); // Get all problems for admin
-      if (searchTerm) params.append("search", searchTerm);
+      params.append("limit", "100");
+      if (search) params.append("search", search);
 
-      const response = await axios.get(`${API_URL}/problems?${params}`);
-      setProblems(response.data.data);
-    } catch (error) {
-      console.error("Error fetching problems:", error);
-      toast.error("Failed to fetch problems");
+      const res = await axios.get(`${API_URL}/problems?${params}`);
+      console.log(res.data);
+      setProblems(res.data.data);
+    } catch (err) {
+      console.error("Failed to load problems:", err);
+      setError("Failed to load problems. Using demo data.");
+      // Set demo data as fallback
+      setProblems([
+        {
+          _id: "demo1",
+          title: "Two Sum",
+          slug: "two-sum",
+          difficulty: "easy",
+          published: true,
+          createdBy: { username: "admin" },
+          createdAt: new Date().toISOString(),
+        },
+        {
+          _id: "demo2",
+          title: "Add Two Numbers",
+          slug: "add-two-numbers",
+          difficulty: "medium",
+          published: true,
+          createdBy: { username: "admin" },
+          createdAt: new Date().toISOString(),
+        },
+        {
+          _id: "demo3",
+          title: "Longest Substring Without Repeating Characters",
+          slug: "longest-substring-without-repeating-characters",
+          difficulty: "medium",
+          published: false,
+          createdBy: { username: "admin" },
+          createdAt: new Date().toISOString(),
+        },
+      ]);
+      toast.error("Failed to load problems");
     } finally {
       setLoading(false);
     }
   };
 
-  const togglePublish = async (problemId: string, currentlyPublished: boolean) => {
+  useEffect(() => {
+    fetchProblems();
+  }, [search]);
+
+
+  const togglePublish = async (id: string, published: boolean) => {
     try {
-      await axios.patch(`${API_URL}/admin/problems/${problemId}/publish`, {
-        published: !currentlyPublished,
+      await axios.patch(`${API_URL}/admin/problems/${id}/publish`, {
+        published: !published,
       });
-      toast.success(`Problem ${!currentlyPublished ? "published" : "unpublished"} successfully`);
+      toast.success(published ? "Unpublished" : "Published");
       fetchProblems();
-    } catch (error) {
-      console.error("Error toggling publish:", error);
-      toast.error("Failed to update problem status");
+    } catch (err: any) {
+      console.error("Failed to toggle publish status:", err);
+      if (err.response?.status === 401 || err.response?.status === 403) {
+        toast.error("Admin authentication required");
+      } else {
+        toast.error("Action failed");
+      }
     }
   };
 
-  const previewProblem = async (problemId: string) => {
+  const previewProblem = async (slug: string) => {
     try {
-      const response = await axios.get(`${API_URL}/problems/${problemId}`);
-      setSelectedProblem(response.data);
-      setPreviewDialogOpen(true);
-    } catch (error) {
-      console.error("Error fetching problem details:", error);
-      toast.error("Failed to fetch problem details");
+      const res = await axios.get(`${API_URL}/problems/${slug}`);
+      setSelected(res.data.data || res.data);
+      setPreviewOpen(true);
+    } catch {
+      toast.error("Failed to load problem");
     }
   };
 
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case "easy":
-        return "bg-green-100 text-green-800";
-      case "medium":
-        return "bg-yellow-100 text-yellow-800";
-      case "hard":
-        return "bg-red-100 text-red-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
+  const difficultyBadge = (d: string) => {
+    if (d === "easy") return "bg-emerald-500/10 text-emerald-400";
+    if (d === "medium") return "bg-yellow-500/10 text-yellow-400";
+    return "bg-red-500/10 text-red-400";
   };
-
-  if (loading) {
-    return (
-      <div className="bg-white p-6 rounded-lg shadow-sm border">
-        <div className="animate-pulse space-y-4">
-          {[...Array(5)].map((_, i) => (
-            <div key={i} className="h-16 bg-gray-200 rounded"></div>
-          ))}
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">
       {/* Search */}
-      <div className="bg-white p-6 rounded-lg shadow-sm border">
+      <div className="rounded-xl border border-slate-800 bg-slate-900 p-4">
         <div className="relative max-w-md">
-          <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+          <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
           <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
             placeholder="Search problems..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
+            className="pl-9 bg-slate-950 border-slate-800"
           />
         </div>
       </div>
 
-      {/* Problems Table */}
-      <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+      {/* Error Display */}
+      {error && (
+        <div className="rounded-xl border border-yellow-500/20 bg-yellow-500/10 p-4">
+          <div className="flex items-center gap-2 text-yellow-400">
+            <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+            <span className="text-sm font-medium">{error}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Table */}
+      <div className="rounded-xl border border-slate-800 bg-slate-900 overflow-hidden">
+        <table className="min-w-full text-sm">
+          <thead className="bg-slate-800 text-slate-400 uppercase text-xs">
+            <tr>
+              <th className="px-6 py-3 text-left">Problem</th>
+              <th className="px-6 py-3">Difficulty</th>
+              <th className="px-6 py-3">Status</th>
+              <th className="px-6 py-3">Created By</th>
+              <th className="px-6 py-3">Created</th>
+              <th className="px-6 py-3 text-right">Actions</th>
+            </tr>
+          </thead>
+
+          <tbody className="divide-y divide-slate-800">
+            {loading ? (
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Problem
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Difficulty
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Created By
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Created
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
+                <td colSpan={6} className="px-6 py-8 text-center text-slate-400">
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-slate-400"></div>
+                    Loading problems...
+                  </div>
+                </td>
               </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {problems.map((problem) => (
-                <tr key={problem._id}>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div>
-                      <div className="text-sm font-medium text-gray-900">
-                        {problem.title}
-                      </div>
-                      <div className="text-sm text-gray-500">/{problem.slug}</div>
-                    </div>
+            ) : problems.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="px-6 py-8 text-center text-slate-400">
+                  No problems found
+                </td>
+              </tr>
+            ) : (
+              problems.map((p) => (
+                <tr
+                  key={p._id}
+                  className="hover:bg-slate-800/60 transition"
+                >
+                  <td className="px-6 py-4">
+                    <div className="font-medium">{p.title}</div>
+                    <div className="text-xs text-slate-400">/{p.slug}</div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getDifficultyColor(problem.difficulty)}`}>
-                      {problem.difficulty}
+
+                  <td className="px-6 py-4">
+                    <span
+                      className={`rounded-full px-2 py-1 text-xs font-medium ${difficultyBadge(
+                        p.difficulty
+                      )}`}
+                    >
+                      {p.difficulty}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      problem.published
-                        ? "bg-green-100 text-green-800"
-                        : "bg-gray-100 text-gray-800"
-                    }`}>
-                      {problem.published ? "Published" : "Draft"}
+
+                  <td className="px-6 py-4">
+                    <span
+                      className={`rounded-full px-2 py-1 text-xs font-medium ${
+                        p.published
+                          ? "bg-emerald-500/10 text-emerald-400"
+                          : "bg-slate-700 text-slate-300"
+                      }`}
+                    >
+                      {p.published ? "Published" : "Draft"}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {problem.createdBy.username}
+
+                  <td className="px-6 py-4 text-slate-400">
+                    {p.createdBy.username}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {new Date(problem.createdAt).toLocaleDateString()}
+
+                  <td className="px-6 py-4 text-slate-400">
+                    {new Date(p.createdAt).toLocaleDateString()}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+
+                  <td className="px-6 py-4 text-right space-x-2">
                     <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => previewProblem(problem._id)}
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => previewProblem(p.slug)}
                     >
                       <Eye className="h-4 w-4" />
                     </Button>
+
                     <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => togglePublish(problem._id, problem.published)}
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => togglePublish(p._id, p.published)}
                     >
-                      {problem.published ? (
-                        <ToggleRight className="h-4 w-4 text-green-600" />
+                      {p.published ? (
+                        <ToggleRight className="h-5 w-5 text-emerald-400" />
                       ) : (
-                        <ToggleLeft className="h-4 w-4 text-gray-600" />
+                        <ToggleLeft className="h-5 w-5 text-slate-400" />
                       )}
                     </Button>
                   </td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              ))
+            )}
+          </tbody>
+        </table>
       </div>
 
-      {/* Problem Preview Dialog */}
-      <Dialog open={previewDialogOpen} onOpenChange={setPreviewDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+      {/* Preview Dialog */}
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="max-w-4xl bg-slate-900 border border-slate-800">
           <DialogHeader>
             <DialogTitle>Problem Preview</DialogTitle>
           </DialogHeader>
-          {selectedProblem && (
+
+          {selected && (
             <div className="space-y-6">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900">
-                  {selectedProblem.title}
-                </h2>
-                <div className="flex items-center gap-4 mt-2">
-                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getDifficultyColor(selectedProblem.difficulty)}`}>
-                    {selectedProblem.difficulty}
+                <h2 className="text-xl font-semibold">{selected.title}</h2>
+                <div className="flex gap-3 mt-2">
+                  <span
+                    className={`rounded-full px-2 py-1 text-xs ${difficultyBadge(
+                      selected.difficulty
+                    )}`}
+                  >
+                    {selected.difficulty}
                   </span>
-                  <span className="text-sm text-gray-600">
-                    By {selectedProblem.createdBy.username}
+                  <span className="text-xs text-slate-400">
+                    By {selected.createdBy.username}
                   </span>
                 </div>
               </div>
 
-              <div>
-                <h3 className="text-lg font-semibold mb-2">Description</h3>
+              <div className="prose prose-invert max-w-none text-sm">
                 <div
-                  className="prose prose-sm max-w-none"
-                  dangerouslySetInnerHTML={{ __html: selectedProblem.description }}
+                  dangerouslySetInnerHTML={{
+                    __html: selected.description,
+                  }}
                 />
               </div>
 
-              {selectedProblem.constraints && selectedProblem.constraints.length > 0 && (
+              {selected.constraints?.length > 0 && (
                 <div>
-                  <h3 className="text-lg font-semibold mb-2">Constraints</h3>
-                  <ul className="list-disc list-inside space-y-1">
-                    {selectedProblem.constraints.map((constraint, index) => (
-                      <li key={index} className="text-sm text-gray-700">
-                        {constraint}
-                      </li>
+                  <h4 className="font-medium mb-2">Constraints</h4>
+                  <ul className="list-disc list-inside text-sm text-slate-300">
+                    {selected.constraints.map((c, i) => (
+                      <li key={i}>{c}</li>
                     ))}
                   </ul>
                 </div>
               )}
 
-              {selectedProblem.examples && selectedProblem.examples.length > 0 && (
-                <div>
-                  <h3 className="text-lg font-semibold mb-2">Examples</h3>
-                  <div className="space-y-4">
-                    {selectedProblem.examples.map((example, index) => (
-                      <div key={index} className="bg-gray-50 p-4 rounded-lg">
-                        <div className="font-medium mb-2">Example {index + 1}:</div>
-                        {example.input && (
-                          <div className="mb-2">
-                            <strong>Input:</strong> {example.input}
-                          </div>
-                        )}
-                        {example.output && (
-                          <div className="mb-2">
-                            <strong>Output:</strong> {example.output}
-                          </div>
-                        )}
-                        {example.explanation && (
-                          <div>
-                            <strong>Explanation:</strong> {example.explanation}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
+              {selected.tags?.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {selected.tags.map((t, i) => (
+                    <span
+                      key={i}
+                      className="rounded-full bg-indigo-500/10 text-indigo-400 px-2 py-1 text-xs"
+                    >
+                      {t}
+                    </span>
+                  ))}
                 </div>
               )}
 
-              {selectedProblem.tags && selectedProblem.tags.length > 0 && (
-                <div>
-                  <h3 className="text-lg font-semibold mb-2">Tags</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedProblem.tags.map((tag, index) => (
-                      <span
-                        key={index}
-                        className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full"
-                      >
-                        {tag}
-                      </span>
-                    ))}
+              <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-800">
+                <div className="rounded-lg bg-slate-800 p-4 text-center">
+                  <div className="text-xl font-bold">
+                    {selected.stats.totalSubmissions}
+                  </div>
+                  <div className="text-xs text-slate-400">
+                    Submissions
                   </div>
                 </div>
-              )}
-
-              <div className="border-t pt-4">
-                <h3 className="text-lg font-semibold mb-2">Statistics</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="text-center p-3 bg-blue-50 rounded">
-                    <div className="text-xl font-bold text-blue-600">
-                      {selectedProblem.stats.totalSubmissions}
-                    </div>
-                    <div className="text-sm text-gray-600">Total Submissions</div>
+                <div className="rounded-lg bg-slate-800 p-4 text-center">
+                  <div className="text-xl font-bold">
+                    {selected.stats.acceptedSubmissions}
                   </div>
-                  <div className="text-center p-3 bg-green-50 rounded">
-                    <div className="text-xl font-bold text-green-600">
-                      {selectedProblem.stats.acceptedSubmissions}
-                    </div>
-                    <div className="text-sm text-gray-600">Accepted</div>
+                  <div className="text-xs text-slate-400">
+                    Accepted
                   </div>
                 </div>
               </div>

@@ -37,7 +37,14 @@ export const signup = async (req: Request, res: Response) => {
     return res.status(201).json({
       success: true,
       message: "Signup successful",
-      user: { id: user._id, username: user.username, email: user.email },
+      user: {
+        id: user._id,
+        username: user.username,
+        fullName: user.fullName,
+        email: user.email,
+        avatar: user.avatar,
+        role: user.role,
+      },
       token,
     });
   } catch (error) {
@@ -69,8 +76,16 @@ export const login = async (req: Request, res: Response) => {
     const token = generateToken(user._id);
 
     return res.json({
+      success: true,
       message: "Login successful",
-      user: { id: user._id, username: user.username, email: user.email },
+      user: {
+        id: user._id,
+        username: user.username,
+        fullName: user.fullName,
+        email: user.email,
+        avatar: user.avatar,
+        role: user.role,
+      },
       token,
     });
   } catch (error) {
