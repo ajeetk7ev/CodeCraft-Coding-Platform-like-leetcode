@@ -23,14 +23,14 @@ import {
 } from "@/components/ui/dialog";
 import toast from "react-hot-toast";
 
-/* ---------------- TYPES ---------------- */
-
 const SUPPORTED_LANGUAGES = [
   { id: "cpp", label: "C++" },
   { id: "java", label: "Java" },
   { id: "python", label: "Python" },
   { id: "javascript", label: "JavaScript" },
 ];
+
+/* ---------------- TYPES ---------------- */
 
 interface Testcase {
   input: string;
@@ -201,7 +201,7 @@ export default function ProblemManagement() {
         );
         toast.success("Problem updated");
       } else {
-        console.log("Creating problem with data:", form);
+        //console.log("Creating problem with data:", form);
         await axios.post(`${API_URL}/problems`, form, authHeaders);
         toast.success("Problem created");
       }
