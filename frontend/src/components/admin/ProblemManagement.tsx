@@ -113,8 +113,6 @@ export default function ProblemManagement() {
     testcases: [],
   });
 
-  
-
   /* ---------------- API ---------------- */
 
   const fetchProblems = async () => {
@@ -201,7 +199,7 @@ export default function ProblemManagement() {
         );
         toast.success("Problem updated");
       } else {
-        //console.log("Creating problem with data:", form);
+       
         await axios.post(`${API_URL}/problems`, form, authHeaders);
         toast.success("Problem created");
       }
@@ -241,6 +239,17 @@ export default function ProblemManagement() {
             e.preventDefault();
             openCreate();
           }}
+          className="
+ bg-linear-to-r from-emerald-600 to-teal-600
+  text-white
+  rounded-xl
+  px-5 py-2
+  shadow-md
+  hover:from-emerald-500 hover:to-teal-500
+  hover:shadow-lg
+  transition-all duration-200
+  flex items-center
+"
         >
           <Plus className="h-4 w-4 mr-2" />
           Create Problem
@@ -276,35 +285,48 @@ export default function ProblemManagement() {
 
       {/* Table */}
       <div className="rounded-xl border border-slate-800 bg-slate-900 overflow-hidden">
-        <table className="min-w-full text-sm">
+        <table className="min-w-full border-collapse text-sm">
+          {/* ---------- HEADER ---------- */}
           <thead className="bg-slate-800 text-slate-400">
             <tr>
-              <th className="px-6 py-3 text-left">Problem</th>
-              <th className="px-6 py-3">Difficulty</th>
-              <th className="px-6 py-3">Status</th>
-              <th className="px-6 py-3 text-right">Actions</th>
+              <th className="px-6 py-3 text-left font-medium">Problem</th>
+
+              <th className="px-6 py-3 text-center font-medium">Difficulty</th>
+
+              <th className="px-6 py-3 text-center font-medium">Status</th>
+
+              <th className="px-6 py-3 text-right font-medium w-40">
+                Actions
+              </th>
             </tr>
           </thead>
 
+          {/* ---------- BODY ---------- */}
           <tbody className="divide-y divide-slate-800">
             {loading ? (
               <tr>
-                <td colSpan={4} className="py-10 text-center text-slate-400">
+                <td colSpan={4} className="py-12 text-center text-slate-400">
                   Loading problems...
                 </td>
               </tr>
             ) : (
               problems.map((p) => (
-                <tr key={p._id} className="hover:bg-slate-800/60 transition">
-                  <td className="px-6 py-4">
+                <tr
+                  key={p._id}
+                  className="hover:bg-slate-800/60 transition-colors"
+                >
+                  {/* Problem */}
+                  <td className="px-6 py-4 align-middle">
                     <div className="font-medium text-slate-100 hover:text-indigo-400 transition">
                       {p.title}
                     </div>
+                  
                   </td>
 
-                  <td className="px-6 py-4">
+                  {/* Difficulty */}
+                  <td className="px-6 py-4 text-center align-middle">
                     <span
-                      className={`px-3 py-1 rounded-full text-xs font-medium ${difficultyBadge(
+                      className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${difficultyBadge(
                         p.difficulty
                       )}`}
                     >
@@ -312,9 +334,10 @@ export default function ProblemManagement() {
                     </span>
                   </td>
 
-                  <td className="px-6 py-4">
+                  {/* Status */}
+                  <td className="px-6 py-4 text-center align-middle">
                     <span
-                      className={`px-3 py-1 rounded-full text-xs font-medium ${
+                      className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
                         p.published
                           ? "bg-emerald-500/10 text-emerald-400"
                           : "bg-slate-700 text-slate-300"
@@ -324,40 +347,43 @@ export default function ProblemManagement() {
                     </span>
                   </td>
 
-                  <td className="px-6 py-4 text-right space-x-2">
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        openEdit(p);
-                      }}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
+                  {/* Actions */}
+                  <td className="px-6 py-4 align-middle">
+                    <div className="flex justify-end items-center gap-2">
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          openEdit(p);
+                        }}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
 
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => togglePublish(p._id, p.published)}
-                    >
-                      {p.published ? (
-                        <ToggleRight className="h-5 w-5 text-emerald-400" />
-                      ) : (
-                        <ToggleLeft className="h-5 w-5" />
-                      )}
-                    </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => togglePublish(p._id, p.published)}
+                      >
+                        {p.published ? (
+                          <ToggleRight className="h-5 w-5 text-emerald-400" />
+                        ) : (
+                          <ToggleLeft className="h-5 w-5 text-slate-400" />
+                        )}
+                      </Button>
 
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => {
-                        setPreviewData(form);
-                        setPreviewOpen(true);
-                      }}
-                    >
-                      <Eye className="h-4 w-4" />
-                    </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => {
+                          setPreviewData(form);
+                          setPreviewOpen(true);
+                        }}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </td>
                 </tr>
               ))
