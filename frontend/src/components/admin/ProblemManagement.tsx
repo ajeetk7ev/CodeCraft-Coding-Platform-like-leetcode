@@ -199,7 +199,6 @@ export default function ProblemManagement() {
         );
         toast.success("Problem updated");
       } else {
-       
         await axios.post(`${API_URL}/problems`, form, authHeaders);
         toast.success("Problem created");
       }
@@ -295,9 +294,7 @@ export default function ProblemManagement() {
 
               <th className="px-6 py-3 text-center font-medium">Status</th>
 
-              <th className="px-6 py-3 text-right font-medium w-40">
-                Actions
-              </th>
+              <th className="px-6 py-3 text-right font-medium w-40">Actions</th>
             </tr>
           </thead>
 
@@ -320,7 +317,6 @@ export default function ProblemManagement() {
                     <div className="font-medium text-slate-100 hover:text-indigo-400 transition">
                       {p.title}
                     </div>
-                  
                   </td>
 
                   {/* Difficulty */}

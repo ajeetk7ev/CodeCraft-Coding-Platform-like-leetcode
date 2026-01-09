@@ -4,12 +4,13 @@ import { useEffect, useState } from "react";
 import { useDashboardCollapsedStore } from "@/stores/dashboardCollapsedStore";
 
 const AdminDashboard = () => {
-  const { collapsed } = useDashboardCollapsedStore();
+  const { collapsed, setCollapsed } = useDashboardCollapsedStore();
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
 
   useEffect(() => {
     const handleResize = () => {
       setIsDesktop(window.innerWidth >= 1024);
+      setCollapsed(window.innerWidth < 1024);
     };
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
