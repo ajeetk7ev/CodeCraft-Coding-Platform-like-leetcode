@@ -172,18 +172,20 @@ function NavItem({ label, to }: { label: string; to: string }) {
   return (
     <Link
       to={to}
-      className={`group relative transition ${
-        isActive ? "text-white" : "text-gray-400 hover:text-white"
-      }`}
+      className={`
+        px-3 py-1.5 rounded-md transition
+        ${
+          isActive
+            ? "bg-gray-800 text-white"
+            : "text-gray-400 hover:bg-gray-800 hover:text-white"
+        }
+      `}
     >
       {label}
-      <span
-        className={`absolute left-0 -bottom-1 h-0.5 bg-indigo-500 transition-all
-        ${isActive ? "w-full" : "w-0 group-hover:w-full"}`}
-      />
     </Link>
   );
 }
+
 
 /* ---------------- Mobile Nav ---------------- */
 
@@ -194,28 +196,66 @@ function MobileNav({
   closeSheet: () => void;
   token: string | null;
 }) {
+  const { user } = useAuthStore();
+
   return (
-    <div className="flex flex-col gap-6 mt-10">
+    <div className="flex flex-col gap-2 mt-10">
       <MobileNavItem to="/problems" label="Problems" onClick={closeSheet} />
       <MobileNavItem to="/contests" label="Contests" onClick={closeSheet} />
       <MobileNavItem to="/discuss" label="Discuss" onClick={closeSheet} />
-      <MobileNavItem
-        to="/leaderboard"
-        label="Leaderboard"
-        onClick={closeSheet}
-      />
+      <MobileNavItem to="/leaderboard" label="Leaderboard" onClick={closeSheet} />
 
-      <div className="pt-6 border-t border-gray-800">
-        {!token && (
-          <Link
-            to="/login"
+      {token && user && (
+        <>
+          <div className="my-4 border-t border-gray-800" />
+
+          {/* PROFILE */}
+          <MobileNavItem
+            to={`/profile/${user.username}`}
+            label="Profile"
+            icon={<User className="h-5 w-5" />}
             onClick={closeSheet}
-            className="block w-full text-center px-4 py-3 rounded-md bg-gray-800 text-gray-300 hover:bg-gray-700 hover:text-white transition"
+          />
+
+          {/* ADMIN */}
+          {user.role === "admin" && (
+            <MobileNavItem
+              to="/admin"
+              label="Admin Panel"
+              icon={<Shield className="h-5 w-5" />}
+              onClick={closeSheet}
+            />
+          )}
+
+          {/* LOGOUT */}
+          <button
+            onClick={() => {
+              useAuthStore.getState().logout();
+              closeSheet();
+            }}
+            className="
+              flex items-center gap-3 px-4 py-3 rounded-md
+              text-red-400 hover:bg-red-500/10 transition
+            "
           >
-            Login
-          </Link>
-        )}
-      </div>
+            <LogOut className="h-5 w-5" />
+            Logout
+          </button>
+        </>
+      )}
+
+      {!token && (
+        <Link
+          to="/login"
+          onClick={closeSheet}
+          className="
+            mt-6 block text-center px-4 py-3 rounded-md
+            bg-gray-800 text-gray-300 hover:bg-gray-700 hover:text-white transition
+          "
+        >
+          Login
+        </Link>
+      )}
     </div>
   );
 }
@@ -223,10 +263,12 @@ function MobileNav({
 function MobileNavItem({
   to,
   label,
+  icon,
   onClick,
 }: {
   to: string;
   label: string;
+  icon?: React.ReactNode;
   onClick: () => void;
 }) {
   const location = useLocation();
@@ -236,14 +278,19 @@ function MobileNavItem({
     <Link
       to={to}
       onClick={onClick}
-      className={`text-lg transition ${
-        isActive
-          ? "text-white font-semibold"
-          : "text-gray-300 hover:text-white"
-      }`}
+      className={`
+        flex items-center gap-3 px-4 py-3 rounded-md text-lg transition
+        ${
+          isActive
+            ? "bg-gray-800 text-white font-semibold"
+            : "text-gray-300 hover:bg-gray-800 hover:text-white"
+        }
+      `}
     >
+      {icon}
       {label}
     </Link>
   );
 }
+
 
