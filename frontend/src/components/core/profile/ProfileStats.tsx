@@ -1,4 +1,3 @@
-// src/components/profile/ProfileStats.tsx
 import { useProfileStore } from "@/stores/profileStore";
 
 export default function ProfileStats() {

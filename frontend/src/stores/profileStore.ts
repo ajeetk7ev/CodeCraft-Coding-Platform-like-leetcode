@@ -41,7 +41,6 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
 
     try {
       const token = getFromLocalStorage("token");
-      console.log("Token in profile store:", token);
       const res = await axios.get<ProfileResponse>(`${API_URL}/user/profile`, {
         headers: {
           Authorization: `Bearer ${token}`,

@@ -2,6 +2,7 @@ import Sidebar from "@/components/admin/Sidebar";
 import { Outlet } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { useDashboardCollapsedStore } from "@/stores/dashboardCollapsedStore";
+import Navbar from "@/components/common/Navbar";
 
 const AdminDashboard = () => {
   const { collapsed, setCollapsed } = useDashboardCollapsedStore();
@@ -17,7 +18,11 @@ const AdminDashboard = () => {
   }, []);
 
   return (
-    <div className="flex min-h-screen bg-slate-950 text-slate-100">
+    <>  
+    <Navbar/>
+     <div className="flex min-h-screen bg-slate-950 text-slate-100 pt-5">
+      {/* Navbar */}
+    
       {/* Sidebar */}
       <div className="lg:fixed lg:inset-y-0 lg:left-0">
         <Sidebar />
@@ -33,6 +38,10 @@ const AdminDashboard = () => {
         <Outlet />
       </main>
     </div>
+
+    
+    </>
+   
   );
 };
 
