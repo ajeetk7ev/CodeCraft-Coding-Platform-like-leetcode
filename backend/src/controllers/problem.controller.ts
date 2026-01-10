@@ -461,8 +461,8 @@ export const getProblem = async (req: Request, res: Response) => {
       boilerplates,
       tags,
       companyTags,
-      preferences
-
+      preferences,
+      solvedStatus
     ] = await Promise.all([
       ProblemDescription.findOne({ problem: problem._id }).select("-__v"),
       ProblemExample.find({ problem: problem._id }).select("-__v -problem -createdAt -updatedAt"),
@@ -477,6 +477,7 @@ export const getProblem = async (req: Request, res: Response) => {
       ProblemTag.find({ problem: problem._id }).select("-__v -problem"),
       ProblemCompanyTag.find({ problem: problem._id }).select("-__v -problem"),
       Preferences.findOne({ user: user._id }).select("-__v -user -createdAt -updatedAt"),
+      Submission.findOne({ user: user._id, problem: problem._id, verdict: Verdict.ACCEPTED })
     ]);
 
 
@@ -491,7 +492,8 @@ export const getProblem = async (req: Request, res: Response) => {
         boilerplates: boilerplates || [],
         tags: tags.map((t) => t.tag),
         companyTags: companyTags.map((ct) => ct.company),
-        preferences
+        preferences,
+        isSolved: !!solvedStatus
       },
     });
   } catch (error) {

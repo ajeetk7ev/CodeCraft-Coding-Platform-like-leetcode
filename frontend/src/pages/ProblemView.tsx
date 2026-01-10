@@ -43,6 +43,8 @@ export default function ProblemView() {
   const [runTestcases, setRunTestcases] = useState<RunTestcase[]>([]);
 
   const [showSubmitModal, setShowSubmitModal] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
 
   useEffect(() => {
     if (submissionResult) {
@@ -137,23 +139,27 @@ export default function ProblemView() {
   return (
     <div ref={rootRef} className="fixed inset-0 flex bg-gray-900 text-gray-100">
 
-      {/* LEFT */}
-      <div
-        style={{ width: `${leftWidth}%` }}
-        className="border-r border-gray-800"
-      >
-        <ProblemDetails problem={problem} />
-      </div>
+      {/* LEFT - Hide when fullscreen */}
+      {!isFullscreen && (
+        <div
+          style={{ width: `${leftWidth}%` }}
+          className="border-r border-gray-800"
+        >
+          <ProblemDetails problem={problem} />
+        </div>
+      )}
 
-      <div
-        onMouseDown={onVerticalMouseDown}
-        className="w-1 bg-gray-800 cursor-col-resize"
-      />
+      {!isFullscreen && (
+        <div
+          onMouseDown={onVerticalMouseDown}
+          className="w-1 bg-gray-800 cursor-col-resize"
+        />
+      )}
 
       {/* RIGHT */}
       <div className="flex-1 overflow-hidden">
         <div ref={verticalAreaRef} className="h-full flex flex-col z-10">
-          <div style={{ height: `${editorHeight}%` }}>
+          <div style={{ height: isFullscreen ? '100%' : `${editorHeight}%` }}>
             <CodePanel
               problemSlug={slug}
               boilerplates={problem.boilerplates}
@@ -166,20 +172,26 @@ export default function ProblemView() {
                 submitCode({ problemId: problem._id, code, language })
               }
               preferences={problem.preferences}
+              isFullscreen={isFullscreen}
+              onToggleFullscreen={() => setIsFullscreen(!isFullscreen)}
             />
           </div>
 
-          <div
-            onMouseDown={onHorizontalMouseDown}
-            className="h-1 z-50 bg-gray-900 cursor-row-resize overflow-y-auto "
-          />
+          {!isFullscreen && (
+            <>
+              <div
+                onMouseDown={onHorizontalMouseDown}
+                className="h-1 z-50 bg-gray-900 cursor-row-resize overflow-y-auto "
+              />
 
-          <TestcasePanel
-            testcases={problem.testcases}
-            examples={problem.examples}
-            result={runResult}
-            onChange={setRunTestcases}
-          />
+              <TestcasePanel
+                testcases={problem.testcases}
+                examples={problem.examples}
+                result={runResult}
+                onChange={setRunTestcases}
+              />
+            </>
+          )}
         </div>
       </div>
 

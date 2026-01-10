@@ -24,7 +24,7 @@ interface Props {
   onRun: () => void;
   onSubmit: () => void;
   runCodeLoading: boolean;
-  submitCodeLoading:boolean;
+  submitCodeLoading: boolean;
   onBack: () => void;
   onToggleSettings: () => void;
   onToggleFullscreen: () => void;
@@ -46,14 +46,14 @@ export default function CodePanelHeader({
   return (
     <div className="flex justify-between items-center px-3 py-2 bg-gray-900 border-b border-gray-800">
       {/* Left */}
-      <div className="flex items-center gap-2">
-        <Button
-          size="icon"
+      <div className="flex items-center gap-4">
+        <button
           onClick={() => navigate("/problems")}
-          className="text-gray-400 hover:text-white"
+          className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
         >
-          <ArrowLeft size={18} /> 
-        </Button>
+          <ArrowLeft size={16} />
+          <span className="hidden sm:inline">Problem List</span>
+        </button>
 
         {/* Language Selector */}
         <div className="relative">
@@ -97,7 +97,7 @@ export default function CodePanelHeader({
 
         <Button
           size="sm"
-         disabled={runCodeLoading || submitCodeLoading}
+          disabled={runCodeLoading || submitCodeLoading}
           onClick={onSubmit}
           className="bg-green-600 hover:bg-green-700 text-white"
         >

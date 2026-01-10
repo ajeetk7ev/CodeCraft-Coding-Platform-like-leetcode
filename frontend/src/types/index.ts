@@ -86,5 +86,6 @@ export interface Problem {
   tags: string[];
   companyTags: string[];
 
-  preferences: Preferences
+  preferences: Preferences;
+  isSolved?: boolean;
 }

@@ -17,6 +17,8 @@ interface Props {
   onRun: (code: string, language: string) => void;
   onSubmit: (code: string, language: string) => void;
   preferences: Preferences;
+  isFullscreen: boolean;
+  onToggleFullscreen: () => void;
 }
 
 export default function CodePanel({
@@ -27,13 +29,15 @@ export default function CodePanel({
   onRun,
   onSubmit,
   preferences,
+  isFullscreen,
+  onToggleFullscreen,
 }: Props) {
   const { token } = useAuthStore();
   const initialLanguage =
     getFromLocalStorage("language") || boilerplates[0].language;
 
   const [language, setLanguage] = useState(initialLanguage);
-  const [isFullscreen, setIsFullscreen] = useState(false);
+  // const [isFullscreen, setIsFullscreen] = useState(false); // Managed by parent
   const [showSettings, setShowSettings] = useState(false);
   const [fontSize, setFontSize] = useState(preferences?.fontSize || 14);
   const [applySettingsLoading, setApplySettingsLoading] = useState(false);
@@ -78,9 +82,8 @@ export default function CodePanel({
 
   return (
     <div
-      className={`flex flex-col border-l border-gray-800 bg-gray-900 ${
-        isFullscreen ? "fixed inset-0 z-50" : "h-full"
-      }`}
+      className={`flex flex-col border-l border-gray-800 bg-gray-900 ${isFullscreen ? "fixed inset-0 z-50" : "h-full"
+        }`}
     >
       <CodePanelHeader
         language={language}
@@ -93,9 +96,11 @@ export default function CodePanel({
         runCodeLoading={runCodeLoading}
         submitCodeLoading={submitCodeLoading}
         isFullscreen={isFullscreen}
-        onToggleFullscreen={() => setIsFullscreen(!isFullscreen)}
+        onToggleFullscreen={onToggleFullscreen}
         onToggleSettings={() => setShowSettings(!showSettings)}
-        onBack={() => setIsFullscreen(false)}
+        onBack={() => {
+          if (isFullscreen) onToggleFullscreen();
+        }}
       />
 
       {/* SETTINGS PANEL */}
