@@ -57,6 +57,9 @@ export const getProfile = async (req: Request, res: Response) => {
       totalSolved: { $gt: stats.totalSolved }
     }) + 1;
 
+    // Get total problems count
+    const totalQuestions = await Problem.countDocuments();
+
     // Get recent submissions for activity heatmap (last 365 days)
     const oneYearAgo = new Date();
     oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
@@ -79,7 +82,7 @@ export const getProfile = async (req: Request, res: Response) => {
       date: sub.submittedAt.toISOString()
     }));
 
-    return res.status(200).json({
+    const responseData = {
       success: true,
       data: {
         user: userResponse,
@@ -88,7 +91,8 @@ export const getProfile = async (req: Request, res: Response) => {
           easySolved: stats.easySolved,
           mediumSolved: stats.mediumSolved,
           hardSolved: stats.hardSolved,
-          rank
+          rank,
+          totalQuestions
         },
         submissions: submissions.map(sub => ({
           date: sub.createdAt.toISOString(),
@@ -96,7 +100,11 @@ export const getProfile = async (req: Request, res: Response) => {
         })),
         recentProblems: recentProblems
       }
-    });
+    };
+
+    console.log("getProfile Response Data:", JSON.stringify(responseData, null, 2));
+
+    return res.status(200).json(responseData);
 
   } catch (error) {
     console.error("Get Profile Error:", error);

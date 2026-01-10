@@ -20,6 +20,7 @@ export interface UserStats {
   mediumSolved: number;
   hardSolved: number;
   rank?: number;
+  totalQuestions?: number;
 }
 
 export interface SubmissionActivity {

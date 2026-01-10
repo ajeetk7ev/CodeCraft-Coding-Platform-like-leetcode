@@ -9,6 +9,8 @@ export const getLeaderboard = async (req: Request, res: Response) => {
             .populate("user", "username avatar") // Populate user details
             .select("-languagesUsed -createdAt -updatedAt -__v"); // Exclude unnecessary fields
 
+        console.log("getLeaderboard Response Data Count:", leaderboard.length);
+
         res.status(200).json({
             success: true,
             data: leaderboard,

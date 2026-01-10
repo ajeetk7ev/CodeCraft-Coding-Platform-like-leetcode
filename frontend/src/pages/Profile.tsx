@@ -28,14 +28,14 @@ export default function Profile() {
     <div className="min-h-screen bg-gray-950 text-gray-200">
       <Navbar />
 
-      <div className="max-w-7xl mx-auto flex gap-6 mt-8">
+      <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-6 mt-8 px-4 md:px-6 pb-12">
         {/* LEFT */}
-        <div className="w-[30%]">
+        <div className="w-full md:w-[30%]">
           <ProfileSidebar />
         </div>
 
         {/* RIGHT */}
-        <div className="w-[65%] space-y-6">
+        <div className="w-full md:w-[65%] space-y-6">
           <ProfileStats />
           <ActivityHeatmap submissions={profile.submissions} />
           <RecentSolved />

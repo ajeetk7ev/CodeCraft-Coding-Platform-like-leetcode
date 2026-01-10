@@ -37,12 +37,16 @@ export default function ProfileStats() {
             <div className="space-y-3">
               <div className="flex justify-between text-sm text-gray-400 mb-1">
                 <span>Problem Solving Progress</span>
-                <span>{stats.totalSolved} Solved</span>
+                <span>
+                  <span className="text-white font-bold">{stats.totalSolved}</span>
+                  <span className="mx-1">/</span>
+                  <span>{stats.totalQuestions ?? 2356}</span> Solved
+                </span>
               </div>
               <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
                 <div
                   className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full"
-                  style={{ width: `${Math.min((stats.totalSolved / 2000) * 100, 100)}%` }}
+                  style={{ width: `${Math.min((stats.totalSolved / (stats.totalQuestions || 2356)) * 100, 100)}%` }}
                 />
               </div>
             </div>

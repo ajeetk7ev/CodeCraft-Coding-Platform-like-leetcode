@@ -33,7 +33,10 @@ export default function Leaderboard() {
                     setUsers(res.data.data);
                 }
             } catch (err) {
-                console.error("Failed to fetch leaderboard", err);
+                console.error("Failed to fetch leaderboard. API URL:", `${API_URL}/leaderboard`, err);
+                if (axios.isAxiosError(err)) {
+                    console.error("Axios Error Details:", err.response?.status, err.response?.data);
+                }
                 setError("Failed to load leaderboard");
             } finally {
                 setIsLoading(false);
@@ -81,38 +84,41 @@ export default function Leaderboard() {
                                 {users.length === 0 ? (
                                     <div className="text-center py-10 text-gray-500">No users found. Be the first to solve a problem!</div>
                                 ) : (
-                                    users.map((entry, index) => (
-                                        <div
-                                            key={entry._id}
-                                            className="grid grid-cols-12 gap-4 p-4 items-center hover:bg-gray-800/50 transition-colors duration-200"
-                                        >
-                                            <div className="col-span-1 text-center font-mono font-bold text-gray-400">
-                                                {index + 1 === 1 ? <Medal className="h-6 w-6 text-yellow-500 mx-auto" /> :
-                                                    index + 1 === 2 ? <Medal className="h-6 w-6 text-gray-300 mx-auto" /> :
-                                                        index + 1 === 3 ? <Medal className="h-6 w-6 text-amber-600 mx-auto" /> :
-                                                            `#${index + 1}`}
+                                    users.map((entry, index) => {
+                                        const user = entry.user || { username: "Unknown User", avatar: "" };
+                                        return (
+                                            <div
+                                                key={entry._id}
+                                                className="grid grid-cols-12 gap-4 p-4 items-center hover:bg-gray-800/50 transition-colors duration-200"
+                                            >
+                                                <div className="col-span-1 text-center font-mono font-bold text-gray-400">
+                                                    {index + 1 === 1 ? <Medal className="h-6 w-6 text-yellow-500 mx-auto" /> :
+                                                        index + 1 === 2 ? <Medal className="h-6 w-6 text-gray-300 mx-auto" /> :
+                                                            index + 1 === 3 ? <Medal className="h-6 w-6 text-amber-600 mx-auto" /> :
+                                                                `#${index + 1}`}
+                                                </div>
+                                                <div className="col-span-5">
+                                                    <Link to={`/profile/${user.username}`} className="flex items-center gap-3 group">
+                                                        <Avatar className="h-10 w-10 border-2 border-transparent group-hover:border-indigo-500 transition-all">
+                                                            <AvatarImage src={user.avatar} />
+                                                            <AvatarFallback>{user.username ? user.username[0].toUpperCase() : "?"}</AvatarFallback>
+                                                        </Avatar>
+                                                        <span className="font-medium text-gray-200 group-hover:text-indigo-400 transition-colors">
+                                                            {user.username}
+                                                        </span>
+                                                    </Link>
+                                                </div>
+                                                <div className="col-span-2 text-center font-bold text-white text-lg">
+                                                    {entry.totalSolved}
+                                                </div>
+                                                <div className="col-span-4 grid grid-cols-3 text-center gap-2 text-sm font-medium">
+                                                    <span className="text-green-400/80">{entry.easySolved}</span>
+                                                    <span className="text-yellow-400/80">{entry.mediumSolved}</span>
+                                                    <span className="text-red-400/80">{entry.hardSolved}</span>
+                                                </div>
                                             </div>
-                                            <div className="col-span-5">
-                                                <Link to={`/profile/${entry.user.username}`} className="flex items-center gap-3 group">
-                                                    <Avatar className="h-10 w-10 border-2 border-transparent group-hover:border-indigo-500 transition-all">
-                                                        <AvatarImage src={entry.user.avatar} />
-                                                        <AvatarFallback>{entry.user.username[0].toUpperCase()}</AvatarFallback>
-                                                    </Avatar>
-                                                    <span className="font-medium text-gray-200 group-hover:text-indigo-400 transition-colors">
-                                                        {entry.user.username}
-                                                    </span>
-                                                </Link>
-                                            </div>
-                                            <div className="col-span-2 text-center font-bold text-white text-lg">
-                                                {entry.totalSolved}
-                                            </div>
-                                            <div className="col-span-4 grid grid-cols-3 text-center gap-2 text-sm font-medium">
-                                                <span className="text-green-400/80">{entry.easySolved}</span>
-                                                <span className="text-yellow-400/80">{entry.mediumSolved}</span>
-                                                <span className="text-red-400/80">{entry.hardSolved}</span>
-                                            </div>
-                                        </div>
-                                    ))
+                                        );
+                                    })
                                 )}
                             </div>
                         </div>
