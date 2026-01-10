@@ -8,10 +8,11 @@ import {
   Settings,
 } from "lucide-react";
 import { useDashboardCollapsedStore } from "@/stores/dashboardCollapsedStore";
+import { useAuthStore } from "@/stores/authStore";
 
 const Sidebar = () => {
   const { collapsed, toggle } = useDashboardCollapsedStore();
-
+ const { user } = useAuthStore();
   const navItems = [
     { to: "/admin", label: "Dashboard", icon: Home, end: true },
     { to: "/admin/analytics", label: "Analytics", icon: TrendingUp },
@@ -23,21 +24,33 @@ const Sidebar = () => {
   return (
     <aside
       className={`
-        fixed top-0 left-0 bottom-0
+        fixed top-16 left-0 bottom-0
         h-calc(100vh-5rem) bg-slate-900 border-r border-slate-800
         transition-all duration-300
         ${collapsed ? "w-20" : "w-64"}
       `}
     >
       {/* Header */}
-      <div className="h-16 flex items-center gap-3 px-4 border-b border-slate-800">
-        <Shield className="h-7 w-7 text-indigo-400" />
-        {!collapsed && (
-          <span className="text-lg font-semibold tracking-tight">
-            Admin
-          </span>
-        )}
-      </div>
+<div className="h-16 flex items-center gap-3 px-4 border-b border-slate-800">
+  {/* Admin Shield */}
+  <Shield className="h-7 w-7 text-indigo-400 shrink-0" />
+
+  {!collapsed && (
+    <div className="flex items-center gap-2">
+      {/* Welcome Icon */}
+      <span className="text-lg">👋</span>
+
+      {/* Welcome Text */}
+      <span className="text-sm text-slate-400">
+        Welcome,
+        <span className="ml-1 text-white font-semibold">
+          {user?.username}
+        </span>
+      </span>
+    </div>
+  )}
+</div>
+
 
       {/* Nav */}
       <nav className="px-2 py-4 space-y-1">

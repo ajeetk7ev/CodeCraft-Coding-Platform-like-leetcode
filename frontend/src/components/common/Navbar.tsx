@@ -43,6 +43,7 @@ export default function Navbar() {
 
         {/* Desktop Nav */}
         <nav className="hidden md:flex items-center gap-8 text-sm font-medium">
+          <NavItem label="Home" to="/" />
           <NavItem label="Problems" to="/problems" />
           <NavItem label="Contests" to="/contests" />
           <NavItem label="Discuss" to="/discuss" />

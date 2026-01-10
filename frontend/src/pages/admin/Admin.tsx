@@ -8,7 +8,9 @@ const AdminDashboard = () => {
   const { collapsed, setCollapsed } = useDashboardCollapsedStore();
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
 
+
   useEffect(() => {
+    setCollapsed(window.innerWidth < 1024);
     const handleResize = () => {
       setIsDesktop(window.innerWidth >= 1024);
       setCollapsed(window.innerWidth < 1024);
