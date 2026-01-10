@@ -85,7 +85,7 @@ export default function MultiSelect({
             </div>
 
             {isOpen && (
-                <div className="absolute z-10 w-full mt-1 bg-gray-900 border border-gray-800 rounded-lg shadow-xl max-h-60 overflow-hidden flex flex-col">
+                <div className="absolute z-50 w-full mt-1 bg-gray-900 border border-gray-800 rounded-lg shadow-xl max-h-60 overflow-hidden flex flex-col">
                     <div className="p-2 border-b border-gray-800">
                         <input
                             type="text"
@@ -108,8 +108,8 @@ export default function MultiSelect({
                                 >
                                     <div
                                         className={`w-4 h-4 rounded border flex items-center justify-center ${selected.includes(option.id)
-                                                ? "bg-indigo-600 border-indigo-600"
-                                                : "border-gray-600"
+                                            ? "bg-indigo-600 border-indigo-600"
+                                            : "border-gray-600"
                                             }`}
                                     >
                                         {selected.includes(option.id) && (

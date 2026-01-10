@@ -64,7 +64,6 @@ export const optionalProtect = async (req: Request, res: Response, next: NextFun
       return next();
     }
 
-    console.log("TOken is ", token);
 
     // Verify token
     try {
@@ -72,7 +71,6 @@ export const optionalProtect = async (req: Request, res: Response, next: NextFun
       const user = await User.findById(decoded.id).select("-password");
       if (user) {
         (req as any).user = user;
-        console.log("User attached to request:", user._id);
       } else {
         console.log("User not found for decoded ID:", decoded.id);
       }

@@ -22,7 +22,8 @@ console.log("PORT:", PORT);
 app.use(express.json());
 app.use(cors());
 
-app.get("/health", (_, res) => {
+app.get("/", (_, res) => {
+    console.log("hi")
     res.send("Server is working fine")
 })
 

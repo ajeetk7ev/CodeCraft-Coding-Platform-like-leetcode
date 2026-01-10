@@ -29,6 +29,7 @@ export default function Leaderboard() {
         const fetchLeaderboard = async () => {
             try {
                 const res = await axios.get(`${API_URL}/leaderboard`);
+                console.log("leaderboard res ", res);
                 if (res.data.success) {
                     setUsers(res.data.data);
                 }

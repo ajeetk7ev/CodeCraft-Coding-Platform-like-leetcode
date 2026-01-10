@@ -162,11 +162,11 @@ export default function Problems() {
         </div>
 
         {/* Filters Bar */}
-        <div className="bg-gray-900/50 backdrop-blur-md border border-gray-800 rounded-2xl p-5 mb-8 shadow-xl">
+        <div className="relative z-30 bg-gray-900/50 backdrop-blur-md border border-gray-800 rounded-2xl p-5 mb-8 shadow-xl">
           <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
 
             {/* Search */}
-            <div className="md:col-span-4 lg:col-span-4">
+            <div className="md:col-span-4 lg:col-span-3">
               <label className="block text-xs font-medium text-gray-400 mb-1 ml-1">Search</label>
               <div className="relative group">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-indigo-400 transition-colors" size={18} />
@@ -216,7 +216,7 @@ export default function Problems() {
             </div>
 
             {/* Tags */}
-            <div className="md:col-span-2 lg:col-span-2.5">
+            <div className="md:col-span-2 lg:col-span-3">
               <MultiSelect
                 label="Tags"
                 placeholder="Select Topics"
@@ -227,7 +227,7 @@ export default function Problems() {
             </div>
 
             {/* Companies */}
-            <div className="md:col-span-2 lg:col-span-2.5">
+            <div className="md:col-span-2 lg:col-span-3">
               <MultiSelect
                 label="Companies"
                 placeholder="Select Companies"
