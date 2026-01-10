@@ -8,14 +8,14 @@ import {
   getAdminProblems,
   getProblemFilters
 } from "../controllers/problem.controller";
-import { protect } from "../middlewares/auth.middleware";
+import { protect, optionalProtect } from "../middlewares/auth.middleware";
 import { isAdmin } from "../middlewares/role.middleware";
 
 const router = express.Router();
 router.get("/admin", protect, isAdmin, getAdminProblems);
 // Public routes
 router.get("/param-filters", getProblemFilters);
-router.get("/", getProblems);
+router.get("/", optionalProtect, getProblems);
 router.get("/:slug", protect, getProblem);
 
 // Protected routes (admin only)

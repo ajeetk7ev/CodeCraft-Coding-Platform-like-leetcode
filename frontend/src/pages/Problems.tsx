@@ -8,7 +8,7 @@ import { useAuthStore } from "@/stores/authStore";
 import axios from "axios";
 import { API_URL } from "@/utils/api";
 import Navbar from "@/components/common/Navbar";
-import { Search, Filter, Tag, Briefcase, ChevronLeft, ChevronRight, Layers } from "lucide-react";
+import { Search, Filter, Tag, Briefcase, ChevronLeft, ChevronRight, Layers, CheckCircle2 } from "lucide-react";
 import MultiSelect from "@/components/common/MultiSelect";
 import DifficultyBadge from "@/components/core/problems/DifficultyBadge";
 import { Link } from "react-router-dom";
@@ -21,6 +21,7 @@ interface Problem {
   difficulty: "easy" | "medium" | "hard";
   tags: string[];
   companies: string[];
+  isSolved: boolean;
 }
 
 interface FilterOptions {
@@ -41,6 +42,7 @@ export default function Problems() {
   // Filters State
   const [search, setSearch] = useState("");
   const [difficulty, setDifficulty] = useState<string>("");
+  const [status, setStatus] = useState<string>("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedCompanies, setSelectedCompanies] = useState<string[]>([]);
 
@@ -48,6 +50,8 @@ export default function Problems() {
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
+
+  console.log("Problems state:", problems);
 
   /* ---------------- AUTH GUARD ---------------- */
   useEffect(() => {
@@ -60,7 +64,7 @@ export default function Problems() {
   useEffect(() => {
     const fetchFilters = async () => {
       try {
-        const res = await axios.get(`${API_URL}/problems/filters`, {
+        const res = await axios.get(`${API_URL}/problems/param-filters`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -85,6 +89,7 @@ export default function Problems() {
         queryParams.append("limit", limit.toString());
         if (search) queryParams.append("search", search);
         if (difficulty) queryParams.append("difficulty", difficulty);
+        if (status) queryParams.append("status", status);
         if (selectedTags.length) queryParams.append("tags", selectedTags.join(","));
         if (selectedCompanies.length) queryParams.append("companies", selectedCompanies.join(","));
 
@@ -114,7 +119,7 @@ export default function Problems() {
     }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [page, limit, token, search, difficulty, selectedTags, selectedCompanies]);
+  }, [page, limit, token, search, difficulty, status, selectedTags, selectedCompanies]);
 
   /* ---------------- HANDLERS ---------------- */
   const handleTagChange = (tags: string[]) => {
@@ -129,6 +134,11 @@ export default function Problems() {
 
   const handleDifficultyChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setDifficulty(e.target.value);
+    setPage(1);
+  };
+
+  const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setStatus(e.target.value);
     setPage(1);
   };
 
@@ -156,7 +166,7 @@ export default function Problems() {
           <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
 
             {/* Search */}
-            <div className="md:col-span-4 lg:col-span-5">
+            <div className="md:col-span-4 lg:col-span-4">
               <label className="block text-xs font-medium text-gray-400 mb-1 ml-1">Search</label>
               <div className="relative group">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-indigo-400 transition-colors" size={18} />
@@ -170,8 +180,25 @@ export default function Problems() {
               </div>
             </div>
 
+            {/* Status */}
+            <div className="md:col-span-2 lg:col-span-1.5">
+              <label className="block text-xs font-medium text-gray-400 mb-1 ml-1">Status</label>
+              <div className="relative">
+                <select
+                  value={status}
+                  onChange={handleStatusChange}
+                  className="w-full bg-gray-900 border border-gray-800 focus:border-indigo-500/50 rounded-lg py-2.5 px-3 text-sm text-gray-200 focus:ring-1 focus:ring-indigo-500/50 focus:outline-none appearance-none cursor-pointer hover:border-gray-700 transition-colors"
+                >
+                  <option value="">All</option>
+                  <option value="solved">Solved</option>
+                  <option value="unsolved">Unsolved</option>
+                </select>
+                <Filter className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" size={14} />
+              </div>
+            </div>
+
             {/* Difficulty */}
-            <div className="md:col-span-2 lg:col-span-2">
+            <div className="md:col-span-2 lg:col-span-1.5">
               <label className="block text-xs font-medium text-gray-400 mb-1 ml-1">Difficulty</label>
               <div className="relative">
                 <select
@@ -179,7 +206,7 @@ export default function Problems() {
                   onChange={handleDifficultyChange}
                   className="w-full bg-gray-900 border border-gray-800 focus:border-indigo-500/50 rounded-lg py-2.5 px-3 text-sm text-gray-200 focus:ring-1 focus:ring-indigo-500/50 focus:outline-none appearance-none cursor-pointer hover:border-gray-700 transition-colors"
                 >
-                  <option value="">All Levels</option>
+                  <option value="">All</option>
                   <option value="easy">Easy</option>
                   <option value="medium">Medium</option>
                   <option value="hard">Hard</option>
@@ -189,7 +216,7 @@ export default function Problems() {
             </div>
 
             {/* Tags */}
-            <div className="md:col-span-3 lg:col-span-2.5">
+            <div className="md:col-span-2 lg:col-span-2.5">
               <MultiSelect
                 label="Tags"
                 placeholder="Select Topics"
@@ -200,7 +227,7 @@ export default function Problems() {
             </div>
 
             {/* Companies */}
-            <div className="md:col-span-3 lg:col-span-2.5">
+            <div className="md:col-span-2 lg:col-span-2.5">
               <MultiSelect
                 label="Companies"
                 placeholder="Select Companies"
@@ -230,6 +257,7 @@ export default function Problems() {
                     onClick={() => {
                       setSearch("");
                       setDifficulty("");
+                      setStatus("");
                       setSelectedTags([]);
                       setSelectedCompanies([]);
                     }}
@@ -247,6 +275,11 @@ export default function Problems() {
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
+                          {problem.isSolved ? (
+                            <CheckCircle2 size={24} className="text-green-500 shrink-0" />
+                          ) : (
+                            <div className="w-6 h-6 shrink-0" /> /* Spacer for alignment */
+                          )}
                           <Link
                             to={`/problems/${problem.slug}`}
                             className="text-lg font-semibold text-gray-100 group-hover:text-indigo-400 transition-colors line-clamp-1"
@@ -256,7 +289,7 @@ export default function Problems() {
                           <DifficultyBadge difficulty={problem.difficulty} />
                         </div>
 
-                        <div className="flex flex-wrap gap-2 items-center">
+                        <div className="flex flex-wrap gap-2 items-center ml-9">
                           {problem.companies && problem.companies.length > 0 && (
                             <div className="flex items-center gap-1.5 mr-3">
                               <Briefcase size={14} className="text-gray-500" />

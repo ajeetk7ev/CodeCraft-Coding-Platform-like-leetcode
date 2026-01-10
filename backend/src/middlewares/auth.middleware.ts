@@ -48,3 +48,42 @@ export const protect = async (req: Request, res: Response, next: NextFunction) =
     });
   }
 };
+
+export const optionalProtect = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    let token;
+
+    if (
+      req.headers.authorization &&
+      req.headers.authorization.startsWith("Bearer")
+    ) {
+      token = req.headers.authorization.split(" ")[1];
+    }
+
+    if (!token) {
+      return next();
+    }
+
+    console.log("TOken is ", token);
+
+    // Verify token
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET!) as DecodedToken;
+      const user = await User.findById(decoded.id).select("-password");
+      if (user) {
+        (req as any).user = user;
+        console.log("User attached to request:", user._id);
+      } else {
+        console.log("User not found for decoded ID:", decoded.id);
+      }
+    } catch (err) {
+      // Token invalid or expired, just proceed as guest
+      console.log("Optional auth token invalid:", err);
+    }
+
+    next();
+  } catch (error) {
+    console.log("Error in optionalProtect middleware ", error);
+    next();
+  }
+};

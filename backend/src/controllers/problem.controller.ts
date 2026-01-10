@@ -9,6 +9,8 @@ import { ProblemCompanyTag } from "../models/problem/ProblemCompanyTag";
 import { ProblemStats } from "../models/problem/ProblemStats";
 import { Preferences } from "../models/user/Preferences";
 import { createProblemSchema, updateProblemSchema } from "../validations/problem.schema";
+import Submission from "../models/submission/Submission";
+import { Verdict } from "../models/submission/verdict";
 
 // Helper function to generate slug from title
 const generateSlug = (title: string): string => {
@@ -197,7 +199,7 @@ export const createProblem = async (req: Request, res: Response) => {
 // READ - Get all problems with optional filtering
 export const getProblems = async (req: Request, res: Response) => {
   try {
-    const { difficulty, page = 1, limit = 10, search, tags, companies } = req.query;
+    const { difficulty, page = 1, limit = 10, search, tags, companies, status } = req.query;
 
     const pageNum = parseInt(page as string, 10);
     const limitNum = parseInt(limit as string, 10);
@@ -267,6 +269,48 @@ export const getProblems = async (req: Request, res: Response) => {
       }
     }
 
+    // Solved Status Logic
+    let solvedProblemIds: string[] = [];
+    const userId = (req as any).user?._id;
+
+    // Fetch solved problems if user is logged in
+    if (userId) {
+      const solvedSubmissions = await Submission.find({
+        user: userId,
+        verdict: Verdict.ACCEPTED
+      }).distinct("problem");
+      solvedProblemIds = solvedSubmissions.map(id => id.toString());
+    }
+
+    // Filter by Status (Solved/Unsolved)
+    if (status && userId) {
+      if (status === "solved") {
+        // Must be in solvedProblemIds
+        if (query._id) {
+          if (query._id["$in"]) {
+            const existingIds = query._id["$in"];
+            query._id = { $in: existingIds.filter((id: any) => solvedProblemIds.includes(id.toString())) };
+          } else {
+            query._id = { $in: solvedProblemIds };
+          }
+        } else {
+          query._id = { $in: solvedProblemIds };
+        }
+      } else if (status === "unsolved") {
+        // Must NOT be in solvedProblemIds
+        if (query._id) {
+          if (query._id["$in"]) {
+            const existingIds = query._id["$in"];
+            query._id = { $in: existingIds.filter((id: any) => !solvedProblemIds.includes(id.toString())) };
+          } else {
+            query._id = { $nin: solvedProblemIds };
+          }
+        } else {
+          query._id = { $nin: solvedProblemIds };
+        }
+      }
+    }
+
     // Get problems with pagination
     const problems = await Problem.find(query)
       .select("-__v")
@@ -291,7 +335,8 @@ export const getProblems = async (req: Request, res: Response) => {
       return {
         ...p,
         tags: allTags.filter(t => t.problem.toString() === p._id.toString()).map(t => t.tag),
-        companies: allCompanies.filter(c => c.problem.toString() === p._id.toString()).map(c => c.company)
+        companies: allCompanies.filter(c => c.problem.toString() === p._id.toString()).map(c => c.company),
+        isSolved: solvedProblemIds.includes(p._id.toString())
       };
     });
 
