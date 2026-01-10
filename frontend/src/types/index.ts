@@ -1,11 +1,11 @@
 
 
-export interface User{
-  id:string;
+export interface User {
+  id: string;
   username: string;
   fullName: string;
   email: string;
-  
+
   gender?: string;
   github?: string;
   linkedin?: string;
@@ -19,6 +19,7 @@ export interface UserStats {
   easySolved: number;
   mediumSolved: number;
   hardSolved: number;
+  rank?: number;
 }
 
 export interface SubmissionActivity {
@@ -61,11 +62,11 @@ export interface Boilerplate {
   userCodeTemplate: string;
 }
 
-export interface Preferences{
-  defaultLanguage:string;
-  theme:string;
-  fontSize:number;
-  tabSize:number;
+export interface Preferences {
+  defaultLanguage: string;
+  theme: string;
+  fontSize: number;
+  tabSize: number;
 }
 
 export interface Problem {
@@ -84,5 +85,5 @@ export interface Problem {
   tags: string[];
   companyTags: string[];
 
-  preferences:Preferences
+  preferences: Preferences
 }

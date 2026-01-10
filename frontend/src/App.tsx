@@ -7,13 +7,13 @@ import Problems from "./pages/Problems";
 import ProblemsList from "./pages/admin/ProblemsList";
 import ProblemView from "./pages/ProblemView";
 import Profile from "./pages/Profile";
-import Admin from "./pages/admin/Admin";
 import NotFound from "./pages/NotFound";
 import AdminDashboard from "./pages/admin/Admin";
 import Dashboard from "./pages/admin/Dashboard";
 import Analytics from "./pages/admin/Analytics";
 import Users from "./pages/admin/Users";
 import Settings from "./pages/admin/Settings";
+import Leaderboard from "./pages/Leaderboard";
 import { useAuthStore } from "./stores/authStore";
 
 function App() {
@@ -31,6 +31,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/problems" element={<Problems />} />
         <Route path="/problems/:slug" element={<ProblemView />} />
+        <Route path="/leaderboard" element={<Leaderboard />} />
         <Route path="/profile/:username" element={<Profile />} />
         <Route path="/admin" element={<AdminDashboard />}>
           <Route index element={<Dashboard />} />

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 
-import ProblemDescription from "@/components/core/problem-view/ProblemDescription";
+
 import CodePanel from "@/components/core/problem-view/CodePanel";
 import TestcasePanel from "@/components/core/problem-view/TestcasePanel";
 import SubmitResultModal from "@/components/core/problem-view/SubmitResultModal";
@@ -136,7 +136,7 @@ export default function ProblemView() {
 
   return (
     <div ref={rootRef} className="fixed inset-0 flex bg-gray-900 text-gray-100">
-      
+
       {/* LEFT */}
       <div
         style={{ width: `${leftWidth}%` }}

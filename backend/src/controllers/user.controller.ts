@@ -52,6 +52,11 @@ export const getProfile = async (req: Request, res: Response) => {
       });
     }
 
+    // Calculate Global Rank
+    const rank = await Stats.countDocuments({
+      totalSolved: { $gt: stats.totalSolved }
+    }) + 1;
+
     // Get recent submissions for activity heatmap (last 365 days)
     const oneYearAgo = new Date();
     oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
@@ -74,39 +79,25 @@ export const getProfile = async (req: Request, res: Response) => {
       date: sub.submittedAt.toISOString()
     }));
 
-    // For testing - create dummy recent problems if none exist
-    let testRecentProblems = recentProblems;
-    
-
-    // For testing - add some dummy stats if all are 0
-    let testStats = {
-      totalSolved: stats.totalSolved,
-      easySolved: stats.easySolved,
-      mediumSolved: stats.mediumSolved,
-      hardSolved: stats.hardSolved
-    };
-    if (stats.totalSolved === 0) {
-      testStats = {
-        totalSolved: 326,
-        easySolved: 180,
-        mediumSolved: 120,
-        hardSolved: 26
-      };
-    }
-
     return res.status(200).json({
       success: true,
       data: {
         user: userResponse,
-        stats: testStats,
+        stats: {
+          totalSolved: stats.totalSolved,
+          easySolved: stats.easySolved,
+          mediumSolved: stats.mediumSolved,
+          hardSolved: stats.hardSolved,
+          rank
+        },
         submissions: submissions.map(sub => ({
           date: sub.createdAt.toISOString(),
           status: "ACCEPTED"
         })),
-        recentProblems: testRecentProblems
+        recentProblems: recentProblems
       }
     });
-    
+
   } catch (error) {
     console.error("Get Profile Error:", error);
     return res.status(500).json({
@@ -118,13 +109,13 @@ export const getProfile = async (req: Request, res: Response) => {
 
 export const updateProfile = async (req: Request, res: Response) => {
   try {
-    
+
     const user = (req as any).user;
     const { fullName, gender, bio, github, linkedin } = req.body;
 
     let avatarUrl;
 
-    if((req as any).file) {
+    if ((req as any).file) {
       const file = (req as any).file;
       console.log("File object:", file);
       console.log("File path:", file.path);
@@ -198,7 +189,7 @@ export const updatePreferences = async (req: Request, res: Response) => {
       });
     }
 
-   const preferences =  await Preferences.findOneAndUpdate(
+    const preferences = await Preferences.findOneAndUpdate(
       { user: user._id },        // find by user
       { $set: { fontSize } },    // update fields
       {
