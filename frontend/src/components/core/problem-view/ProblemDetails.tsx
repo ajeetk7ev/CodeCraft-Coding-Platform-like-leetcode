@@ -4,7 +4,7 @@ import ProblemDescription from "./ProblemDescription";
 import type { Problem } from "@/types";
 import ProblemSubmission from "./ProblemSubmission";
 
-export default function ProblemDetails({problem}:{problem:Problem}) {
+export default function ProblemDetails({ problem }: { problem: Problem }) {
   const [active, setActive] = useState("Description");
 
   return (
@@ -13,10 +13,10 @@ export default function ProblemDetails({problem}:{problem:Problem}) {
 
       {/* Tab Content */}
       <div className="mt-6">
-        {active === "Description" && <ProblemDescription problem={problem}/>}
+        {active === "Description" && <ProblemDescription problem={problem} />}
         {active === "Editorial" && <div>Editorial Comming Soon</div>}
         {active === "Solutions" && <div>Solutions Comming Soon</div>}
-        {active === "Submissions" && <ProblemSubmission/>}
+        {active === "Submissions" && <ProblemSubmission problemId={problem._id} />}
       </div>
     </div>
   );
