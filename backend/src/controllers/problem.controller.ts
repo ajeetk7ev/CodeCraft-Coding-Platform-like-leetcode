@@ -178,7 +178,7 @@ export const createProblem = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     console.log("Error in createProblem", error);
-    
+
     // Handle duplicate key error
     if (error.code === 11000) {
       return res.status(400).json({
@@ -197,8 +197,11 @@ export const createProblem = async (req: Request, res: Response) => {
 // READ - Get all problems with optional filtering
 export const getProblems = async (req: Request, res: Response) => {
   try {
-    const { difficulty, page = 1, limit = 10, search } = req.query;
+    const { difficulty, page = 1, limit = 10, search, tags, companies } = req.query;
 
+    const pageNum = parseInt(page as string, 10);
+    const limitNum = parseInt(limit as string, 10);
+    const skip = (pageNum - 1) * limitNum;
 
     // Build query
     const query: any = {};
@@ -206,9 +209,7 @@ export const getProblems = async (req: Request, res: Response) => {
       query.difficulty = difficulty;
     }
 
-    query.published = true;
-    
-    
+    query.published = true; // Ensure only published problems are shown
 
     if (search) {
       query.$or = [
@@ -217,11 +218,54 @@ export const getProblems = async (req: Request, res: Response) => {
       ];
     }
 
-   
-    // Pagination
-    const pageNum = parseInt(page as string, 10);
-    const limitNum = parseInt(limit as string, 10);
-    const skip = (pageNum - 1) * limitNum;
+    // Filter by Tags (Intersection: Problem must have ALL selected tags)
+    if (tags) {
+      const tagList = (tags as string).split(",").map(t => t.trim()).filter(Boolean);
+      if (tagList.length > 0) {
+        // Find problems that have these tags
+        const matchedTagProblems = await ProblemTag.aggregate([
+          { $match: { tag: { $in: tagList } } },
+          { $group: { _id: "$problem", matchedCount: { $sum: 1 } } },
+          { $match: { matchedCount: tagList.length } } // Ensure all tags match
+        ]);
+        const problemIds = matchedTagProblems.map(p => p._id);
+
+        // If we already have criteria (like search), we need to intersect
+        if (query._id) {
+          query._id = { $in: query._id["$in"].filter((id: any) => problemIds.some((pid: any) => pid.equals(id))) };
+        } else {
+          query._id = { $in: problemIds };
+        }
+      }
+    }
+
+    // Filter by Companies (Union: Problem matches ANY selected company - standard behavior usually, let's do Union for companies)
+    // Actually typically filtering is intersection for tags, but union for companies is common too.
+    // Let's stick to Intersection for consistency if multi-select, OR Union if that's more intuitive.
+    // Let's do Union for companies (any of the selected companies).
+    if (companies) {
+      const companyList = (companies as string).split(",").map(c => c.trim()).filter(Boolean);
+      if (companyList.length > 0) {
+        const matchedCompanyProblems = await ProblemCompanyTag.find({
+          company: { $in: companyList }
+        }).distinct("problem");
+
+        // Intersect with existing ID filter if any
+        if (query._id) {
+          // query._id might be { $in: [...] }
+          if (query._id["$in"]) {
+            const existingIds = query._id["$in"];
+            // Intersection of strings/objectIds is tricky, helper needed?
+            // Mongoose handles ObjectId vs String usually well in $in
+            query._id = { $in: existingIds.filter((id: any) => matchedCompanyProblems.some((pid: any) => pid.toString() === id.toString())) };
+          } else {
+            query._id = { $in: matchedCompanyProblems };
+          }
+        } else {
+          query._id = { $in: matchedCompanyProblems };
+        }
+      }
+    }
 
     // Get problems with pagination
     const problems = await Problem.find(query)
@@ -231,12 +275,32 @@ export const getProblems = async (req: Request, res: Response) => {
       .skip(skip)
       .limit(limitNum);
 
+    // Fetch tags and companies for the fetched problems to display in UI
+    const problemIds = problems.map(p => p._id);
+
+    // Parallel fetch for efficiency
+    const [allTags, allCompanies] = await Promise.all([
+      ProblemTag.find({ problem: { $in: problemIds } }),
+      ProblemCompanyTag.find({ problem: { $in: problemIds } })
+    ]);
+
+    // Attach metadata to problems
+    // We need to return a slightly richer object than the Mongoose document
+    const enrichedProblems = problems.map(problem => {
+      const p: any = problem.toObject();
+      return {
+        ...p,
+        tags: allTags.filter(t => t.problem.toString() === p._id.toString()).map(t => t.tag),
+        companies: allCompanies.filter(c => c.problem.toString() === p._id.toString()).map(c => c.company)
+      };
+    });
+
     // Get total count
     const total = await Problem.countDocuments(query);
 
     return res.json({
       success: true,
-      data: problems,
+      data: enrichedProblems,
       pagination: {
         page: pageNum,
         limit: limitNum,
@@ -249,6 +313,30 @@ export const getProblems = async (req: Request, res: Response) => {
     return res.status(500).json({
       success: false,
       message: "Server error",
+    });
+  }
+};
+
+// GET FILTERS - Get unique tags and companies
+export const getProblemFilters = async (req: Request, res: Response) => {
+  try {
+    const [tags, companies] = await Promise.all([
+      ProblemTag.distinct("tag"),
+      ProblemCompanyTag.distinct("company")
+    ]);
+
+    return res.json({
+      success: true,
+      data: {
+        tags: tags.sort(),
+        companies: companies.sort()
+      }
+    });
+  } catch (error) {
+    console.error("Error fetching filters:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch filters"
     });
   }
 };
@@ -270,7 +358,7 @@ export const getAdminProblems = async (req: Request, res: Response) => {
       ];
     }
 
-   
+
     // Pagination
     const pageNum = parseInt(page as string, 10);
     const limitNum = parseInt(limit as string, 10);
@@ -312,7 +400,7 @@ export const getProblem = async (req: Request, res: Response) => {
     const { slug } = req.params;
     const user = (req as any).user;
 
-    const problem = await Problem.findOne({slug}).select("-__v -createdAt -updatedAt -createdBy");
+    const problem = await Problem.findOne({ slug }).select("-__v -createdAt -updatedAt -createdBy");
 
     if (!problem) {
       return res.status(404).json({
@@ -329,7 +417,7 @@ export const getProblem = async (req: Request, res: Response) => {
       tags,
       companyTags,
       preferences
-     
+
     ] = await Promise.all([
       ProblemDescription.findOne({ problem: problem._id }).select("-__v"),
       ProblemExample.find({ problem: problem._id }).select("-__v -problem -createdAt -updatedAt"),
@@ -343,7 +431,7 @@ export const getProblem = async (req: Request, res: Response) => {
       ProblemBoilerplate.find({ problem: problem._id }).select("-__v -problem -fullCodeTemplate -createdAt -updatedAt"),
       ProblemTag.find({ problem: problem._id }).select("-__v -problem"),
       ProblemCompanyTag.find({ problem: problem._id }).select("-__v -problem"),
-      Preferences.findOne({user:user._id}).select("-__v -user -createdAt -updatedAt"),
+      Preferences.findOne({ user: user._id }).select("-__v -user -createdAt -updatedAt"),
     ]);
 
 
