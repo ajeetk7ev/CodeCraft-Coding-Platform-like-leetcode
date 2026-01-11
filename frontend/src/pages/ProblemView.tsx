@@ -135,8 +135,12 @@ export default function ProblemView() {
 
   if (loading)
     return (
-      <div className="fixed inset-0 flex items-center justify-center">
-        Loading...
+      <div className="fixed inset-0 flex flex-col items-center justify-center bg-[#0f172a] z-[100]">
+        <div className="relative">
+          <div className="h-16 w-16 rounded-full border-4 border-indigo-500/20 border-t-indigo-500 animate-spin" />
+          <div className="absolute inset-0 h-16 w-16 rounded-full border-4 border-transparent border-b-indigo-400/30 animate-pulse" />
+        </div>
+        <p className="mt-4 text-gray-400 font-medium animate-pulse tracking-wide italic">Preparing Workspace...</p>
       </div>
     );
 
@@ -150,7 +154,7 @@ export default function ProblemView() {
   if (!problem) return null;
 
   return (
-    <div ref={rootRef} className="fixed inset-0 flex flex-col md:flex-row bg-gray-900 text-gray-100">
+    <div ref={rootRef} className="fixed inset-0 flex flex-col md:flex-row bg-[#0f172a] text-gray-100">
 
       {/* MOBILE TABS HEADER (Optional: can be bottom nav too, let's do top for now or bottom) */}
       {/* Going with Mobile Bottom Nav approach or conditional rendering of huge chunks */}
@@ -159,7 +163,7 @@ export default function ProblemView() {
       {(!isMobile || activeTab === "problem") && !isFullscreen && (
         <div
           style={{ width: isMobile ? "100%" : `${leftWidth}%` }}
-          className={`flex flex-col bg-gray-900 ${isMobile ? "h-full pb-16" : "border-r border-gray-800 h-full"
+          className={`flex flex-col bg-[#0f172a] ${isMobile ? "h-full pb-16" : "border-r border-[#1e293b] h-full"
             }`}
         >
           <ProblemDetails problem={problem} />
@@ -170,7 +174,7 @@ export default function ProblemView() {
       {!isMobile && !isFullscreen && (
         <div
           onMouseDown={onVerticalMouseDown}
-          className="w-1 bg-gray-800 cursor-col-resize hover:bg-gray-700 transition-colors"
+          className="w-1 bg-[#1e293b] cursor-col-resize hover:bg-slate-700 transition-colors"
         />
       )}
 
@@ -202,7 +206,7 @@ export default function ProblemView() {
               <>
                 <div
                   onMouseDown={onHorizontalMouseDown}
-                  className="h-1 z-50 bg-gray-900 cursor-row-resize hover:bg-gray-700 transition-colors overflow-y-auto"
+                  className="h-1 z-50 bg-[#0f172a] cursor-row-resize hover:bg-slate-700 transition-colors overflow-y-auto"
                 />
                 <TestcasePanel
                   testcases={problem.testcases}
@@ -221,7 +225,7 @@ export default function ProblemView() {
                 Actually, let's just stack it with 'flex-1' for editor and fixed for testcase or allow scroll.
             */}
             {isMobile && !isFullscreen && (
-              <div className="flex-1 border-t border-gray-800 min-h-0 bg-gray-900">
+              <div className="flex-1 border-t border-[#1e293b] min-h-0 bg-[#0f172a]">
                 <TestcasePanel
                   testcases={problem.testcases}
                   examples={problem.examples}

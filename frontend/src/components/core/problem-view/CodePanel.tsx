@@ -82,7 +82,7 @@ export default function CodePanel({
 
   return (
     <div
-      className={`flex flex-col border-l border-gray-800 bg-gray-900 ${isFullscreen ? "fixed inset-0 z-50" : "h-full"
+      className={`flex flex-col border-l border-[#1f2937] bg-[#0f172a] ${isFullscreen ? "fixed inset-0 z-50" : "h-full"
         }`}
     >
       <CodePanelHeader

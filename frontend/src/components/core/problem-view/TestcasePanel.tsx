@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { CheckCircle2, XCircle, Info, Clock, Database, ChevronRight } from "lucide-react";
 
 /* ---------- types ---------- */
 
@@ -53,12 +55,12 @@ export default function TestcasePanel({
 }: Props) {
   const [activeTab, setActiveTab] = useState<"testcase" | "result">("testcase");
   const [activeCase, setActiveCase] = useState(0);
+  const [activeResultCase, setActiveResultCase] = useState(0);
   const [cases, setCases] = useState<ParsedInput[][]>([]);
 
   /* ---------- init testcases ---------- */
   useEffect(() => {
     const baseExample = examples?.[0]?.input ?? "x";
-
     const parsed = testcases.map((tc) => buildInputs(baseExample, tc.input));
 
     setCases(parsed);
@@ -73,137 +75,214 @@ export default function TestcasePanel({
   }, [testcases, examples]);
 
   useEffect(() => {
-    if(result){
-      setActiveTab("result")
+    if (result) {
+      setActiveTab("result");
+      setActiveResultCase(0);
     }
-  } ,[result])
+  }, [result]);
 
   /* ---------- detect result type ---------- */
   const isRunResult = result?.results;
+  const overallVerdict = result?.verdict || (isRunResult && result.results.every((r: any) => r.verdict === "ACCEPTED") ? "ACCEPTED" : "FAILED");
 
   return (
-    <div className="h-64 z-50 bg-gray-800 border-t border-gray-800 flex flex-col text-sm">
+    <div className="flex-1 min-h-0 bg-[#0f172a] flex flex-col text-sm overflow-hidden">
       {/* Tabs */}
-      <div className="flex gap-6 px-4 pt-3 border-b border-gray-800">
-        {["testcase", "result"].map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab as any)}
-            className={`pb-2 ${
-              activeTab === tab
-                ? "border-b-2 border-green-500 text-white"
-                : "text-gray-400"
-            }`}
-          >
-            {tab === "testcase" ? "Testcase" : "Test Result"}
-          </button>
-        ))}
+      <div className="flex items-center justify-between px-4 border-b border-[#1e293b] bg-[#1e293b]">
+        <div className="flex gap-6">
+          {["testcase", "result"].map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab as any)}
+              className={`pt-3 pb-2 text-xs font-semibold uppercase tracking-wider transition-all relative ${activeTab === tab ? "text-white" : "text-gray-500 hover:text-gray-300"
+                }`}
+            >
+              {tab === "testcase" ? "Testcase" : "Test Result"}
+              {activeTab === tab && (
+                <motion.div
+                  layoutId="activeTabIndicator"
+                  className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-500"
+                />
+              )}
+            </button>
+          ))}
+        </div>
+
+        {activeTab === "result" && result && (
+          <div className={`text-xs font-bold px-2 py-0.5 rounded ${overallVerdict === "ACCEPTED" ? "bg-green-500/10 text-green-400" : "bg-red-500/10 text-red-400"
+            }`}>
+            {overallVerdict}
+          </div>
+        )}
       </div>
 
-      {/* ================= TESTCASES ================= */}
-      {activeTab === "testcase" && (
-        <>
-          <div className="flex gap-2 px-4 py-3">
-            {cases.map((_, idx) => (
-              <button
-                key={idx}
-                onClick={() => setActiveCase(idx)}
-                className={`px-3 py-1 rounded-md ${
-                  activeCase === idx
-                    ? "bg-gray-700 text-white"
-                    : "bg-gray-800 text-gray-400 hover:bg-gray-700"
-                }`}
-              >
-                Case {idx + 1}
-              </button>
-            ))}
-          </div>
-
-          <div className="flex-1 overflow-y-auto px-4 space-y-4 pb-4">
-            {cases[activeCase]?.map((input, idx) => (
-              <div key={idx}>
-                <div className="text-gray-400 mb-1">{input.key} =</div>
-                <input
-                  value={input.value}
-                  readOnly
-                  disabled
-                  className="w-fit bg-gray-800 border border-gray-700 rounded-md px-3 py-2 text-gray-300"
-                />
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* ================= TESTCASES ================= */}
+        <AnimatePresence mode="wait">
+          {activeTab === "testcase" && (
+            <motion.div
+              key="testcase"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="flex-1 flex flex-col overflow-hidden"
+            >
+              <div className="flex flex-nowrap gap-2 px-4 py-3 bg-[#0f172a] overflow-x-auto no-scrollbar">
+                {cases.map((_, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setActiveCase(idx)}
+                    className={`shrink-0 px-4 py-1.5 rounded-lg text-xs font-medium transition-all ${activeCase === idx
+                      ? "bg-slate-700 text-white shadow-lg"
+                      : "bg-slate-800/50 text-gray-400 hover:bg-slate-800 hover:text-gray-200"
+                      }`}
+                  >
+                    Case {idx + 1}
+                  </button>
+                ))}
               </div>
-            ))}
-          </div>
-        </>
-      )}
 
-      {/* ================= RESULTS ================= */}
-      {activeTab === "result" && (
-        <div className="flex-1 overflow-y-auto p-4 space-y-3">
-          {!result && (
-            <div className="text-gray-400 text-center">
-              Run or submit your code to see results
-            </div>
+              <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
+                {cases[activeCase]?.map((input, idx) => (
+                  <div key={idx} className="space-y-2">
+                    <div className="flex items-center gap-2 text-gray-400 font-medium text-xs">
+                      <ChevronRight size={14} className="text-indigo-400" />
+                      <span>{input.key}</span>
+                    </div>
+                    <div className="w-full bg-[#1e293b] border border-[#334155] rounded-xl px-4 py-3 text-gray-200 font-mono shadow-inner">
+                      {input.value}
+                    </div>
+                  </div>
+                ))}
+                {cases.length === 0 && (
+                  <div className="h-full flex flex-col items-center justify-center text-gray-500 gap-2 italic">
+                    <Info size={24} />
+                    <span>No test cases available</span>
+                  </div>
+                )}
+              </div>
+            </motion.div>
           )}
 
-          {/* ---------- RUN RESULT ---------- */}
-          {isRunResult &&
-            result.results.map((r: any, idx: number) => {
-              const isError =
-                r.verdict === "COMPILE_ERROR" || r.verdict === "RUNTIME_ERROR";
-
-              return (
-                <div
-                  key={idx}
-                  className="bg-gray-800 border border-gray-700 rounded-md p-3"
-                >
-                  {/* Header */}
-                  <div className="flex justify-between mb-2">
-                    <span>Case {r.testcase}</span>
-                    <span
-                      className={
-                        r.verdict === "ACCEPTED"
-                          ? "text-green-400"
-                          : "text-red-400"
-                      }
-                    >
-                      {r.verdict}
-                    </span>
+          {/* ================= RESULTS ================= */}
+          {activeTab === "result" && (
+            <motion.div
+              key="result"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="flex-1 flex flex-col overflow-hidden"
+            >
+              {!result ? (
+                <div className="flex-1 flex flex-col items-center justify-center text-gray-500 gap-3 border-dashed border-2 border-gray-800/30 m-4 rounded-2xl">
+                  <div className="p-4 bg-gray-800/30 rounded-full">
+                    <Clock size={32} className="text-gray-600" />
+                  </div>
+                  <span className="text-sm font-medium">Run your code to see results</span>
+                </div>
+              ) : (
+                <>
+                  {/* Result Case Selector */}
+                  <div className="flex flex-nowrap gap-2 px-4 py-3 bg-[#0f172a] border-b border-[#1e293b] overflow-x-auto no-scrollbar">
+                    {isRunResult && result.results.map((r: any, idx: number) => (
+                      <button
+                        key={idx}
+                        onClick={() => setActiveResultCase(idx)}
+                        className={`shrink-0 px-4 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-2 ${activeResultCase === idx
+                          ? "bg-slate-700 text-white shadow-lg"
+                          : "bg-slate-800/50 text-gray-400 hover:bg-slate-800 hover:text-gray-200"
+                          }`}
+                      >
+                        <div className={`w-1.5 h-1.5 rounded-full ${r.verdict === "ACCEPTED" ? "bg-green-500" : "bg-red-500"
+                          }`} />
+                        Case {idx + 1}
+                      </button>
+                    ))}
                   </div>
 
-                  {/* ================= ERROR UI ================= */}
-                  {isError && (
-                    <pre className="text-red-400 text-xs bg-gray-900 p-3 rounded-md overflow-x-auto">
-                      {r.compileOutput || r.stderr || "Unknown Error"}
-                    </pre>
-                  )}
+                  {/* Active Result Content */}
+                  <div className="flex-1 overflow-y-auto px-6 py-4">
+                    {isRunResult && result.results[activeResultCase] && (() => {
+                      const r = result.results[activeResultCase];
+                      const isError = r.verdict === "COMPILE_ERROR" || r.verdict === "RUNTIME_ERROR";
 
-                  {/* ================= SUCCESS / WA UI ================= */}
-                  {!isError && (
-                    <div className="text-xs text-gray-300 space-y-1 ">
-                      <div>
-                        <span className="text-gray-400">Input:</span> {r.input}
-                      </div>
+                      return (
+                        <div className="space-y-6">
+                          {/* Status Message */}
+                          <div className="flex items-center justify-between bg-gray-800/20 p-3 rounded-xl border border-gray-800/50">
+                            <div className="flex items-center gap-3">
+                              {r.verdict === "ACCEPTED" ? (
+                                <CheckCircle2 className="text-green-500" size={20} />
+                              ) : (
+                                <XCircle className="text-red-500" size={20} />
+                              )}
+                              <span className={`text-lg font-bold ${r.verdict === "ACCEPTED" ? "text-green-400" : "text-red-400"
+                                }`}>
+                                {r.verdict === "ACCEPTED" ? "Passed" : r.verdict}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-4 text-[10px] text-gray-500 uppercase tracking-tighter">
+                              <div className="flex items-center gap-1.5 bg-gray-800/40 px-2 py-1 rounded">
+                                <Clock size={12} />
+                                <span>{r.runtime}ms</span>
+                              </div>
+                              <div className="flex items-center gap-1.5 bg-gray-800/40 px-2 py-1 rounded">
+                                <Database size={12} />
+                                <span>{r.memory}KB</span>
+                              </div>
+                            </div>
+                          </div>
 
-                      <div>
-                        <span className="text-gray-400">Expected:</span>{" "}
-                        {r.expectedOutput}
-                      </div>
+                          {/* Error block */}
+                          {isError && (
+                            <div className="space-y-2">
+                              <div className="text-red-400 font-bold text-xs uppercase tracking-widest">Error Output</div>
+                              <pre className="text-red-300 text-xs bg-red-950/20 border border-red-900/30 p-4 rounded-xl overflow-x-auto font-mono leading-relaxed">
+                                {r.compileOutput || r.stderr || "Unknown Error"}
+                              </pre>
+                            </div>
+                          )}
 
-                      <div>
-                        <span className="text-gray-400">Output:</span>{" "}
-                        {r.stdout}
-                      </div>
+                          {!isError && (
+                            <div className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                              {/* Input */}
+                              <div className="space-y-2">
+                                <span className="text-gray-400 text-xs font-semibold uppercase tracking-wider">Input</span>
+                                <div className="bg-[#1e293b] border border-[#334155] rounded-xl px-4 py-3 font-mono text-gray-300 overflow-x-auto whitespace-pre-wrap">
+                                  {r.input}
+                                </div>
+                              </div>
 
-                      <div className="text-gray-500">
-                        Runtime: {r.runtime} ms | Memory: {r.memory} KB
-                      </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+                              {/* Expected */}
+                              <div className="space-y-2">
+                                <span className="text-gray-400 text-xs font-semibold uppercase tracking-wider">Expected Output</span>
+                                <div className="bg-[#1e293b] border border-[#334155] rounded-xl px-4 py-3 font-mono text-green-400/80 overflow-x-auto whitespace-pre-wrap">
+                                  {r.expectedOutput}
+                                </div>
+                              </div>
 
-        </div>
-      )}
+                              {/* Actual */}
+                              <div className="space-y-2">
+                                <span className="text-gray-400 text-xs font-semibold uppercase tracking-wider">Your Output</span>
+                                <div className={`border rounded-xl px-4 py-3 font-mono overflow-x-auto whitespace-pre-wrap ${r.verdict === "ACCEPTED"
+                                  ? "bg-green-500/5 border-green-500/20 text-green-400"
+                                  : "bg-red-500/5 border-red-500/20 text-red-400"
+                                  }`}>
+                                  {r.stdout || <span className="italic opacity-50">Empty response</span>}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
+                  </div>
+                </>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </div>
   );
 }

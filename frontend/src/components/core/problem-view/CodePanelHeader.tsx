@@ -3,11 +3,11 @@ import {
   Play,
   Upload,
   ChevronDown,
-  ArrowLeft,
   Settings,
   Maximize2,
   Minimize2,
   LoaderCircle,
+  ChevronLeft,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -43,24 +43,27 @@ export default function CodePanelHeader({
   isFullscreen,
 }: Props) {
   const navigate = useNavigate();
+
   return (
-    <div className="flex justify-between items-center px-3 py-2 bg-gray-900 border-b border-gray-800">
-      {/* Left */}
-      <div className="flex items-center gap-4">
+    <div className="flex justify-between items-center px-4 py-2 bg-[#0f172a] border-b border-[#1e293b] shadow-sm z-30">
+      {/* Left Section */}
+      <div className="flex items-center gap-3">
         <button
           onClick={() => navigate("/problems")}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-400 hover:text-white hover:bg-white/5 transition-all group"
         >
-          <ArrowLeft size={16} />
-          <span className="hidden sm:inline">Problem List</span>
+          <ChevronLeft size={16} className="group-hover:-translate-x-0.5 transition-transform" />
+          <span className="hidden lg:inline">Problems</span>
         </button>
 
+        <div className="h-6 w-[1px] bg-gray-800 mx-1 hidden sm:block" />
+
         {/* Language Selector */}
-        <div className="relative">
+        <div className="relative group">
           <select
             value={language}
             onChange={(e) => onLanguageChange(e.target.value)}
-            className="bg-gray-800 text-gray-200 text-sm border border-gray-700 rounded-md px-3 py-1.5 pr-7 outline-none"
+            className="appearance-none bg-[#1e293b] text-gray-200 text-xs font-medium border border-[#334155] rounded-md px-3 py-1.5 pr-8 outline-none hover:border-gray-600 transition-all cursor-pointer min-w-[120px]"
           >
             {LANGUAGES.map((lang) => (
               <option key={lang.id} value={lang.id}>
@@ -69,68 +72,62 @@ export default function CodePanelHeader({
             ))}
           </select>
           <ChevronDown
-            size={14}
-            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400"
+            size={12}
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none group-hover:text-gray-300 transition-colors"
           />
         </div>
       </div>
 
-      <div className="flex gap-2">
+      {/* Center Action (Only on Desktop maybe, or just keep layout clean) */}
+      <div className="flex items-center gap-2">
         <Button
           size="sm"
+          variant="ghost"
           disabled={runCodeLoading || submitCodeLoading}
           onClick={onRun}
-          className="text-green-400 hover:bg-green-500/10"
+          className="h-8 text-gray-300 hover:text-white hover:bg-white/10 px-4 gap-2 transition-all font-semibold text-xs active:scale-95"
         >
           {runCodeLoading ? (
-            <>
-              <LoaderCircle size={16} className="animate-spin" />
-
-            </>
+            <LoaderCircle size={14} className="animate-spin text-indigo-400" />
           ) : (
-            <>
-              <Play size={16} />
-              Run
-            </>
+            <Play size={14} className="fill-current text-gray-400 group-hover:text-white" />
           )}
+          Run
         </Button>
 
         <Button
           size="sm"
           disabled={runCodeLoading || submitCodeLoading}
           onClick={onSubmit}
-          className="bg-green-600 hover:bg-green-700 text-white"
+          className="h-8 bg-green-600 hover:bg-green-500 text-white px-5 gap-2 transition-all font-bold text-xs shadow-lg shadow-green-900/10 active:scale-95"
         >
           {submitCodeLoading ? (
-            <>
-              <LoaderCircle size={16} className="animate-spin" />
-              Submitting...
-            </>
+            <LoaderCircle size={14} className="animate-spin" />
           ) : (
-            <>
-              <Upload size={16} />
-              Submit
-            </>
+            <Upload size={14} />
           )}
+          <span className="hidden xs:inline">Submit</span>
         </Button>
       </div>
 
-      {/* Right */}
-      <div className="flex items-center gap-2">
+      {/* Right Section */}
+      <div className="flex items-center gap-1">
         <Button
+          variant="ghost"
           size="icon"
           onClick={onToggleSettings}
-          className="text-gray-400 hover:text-white"
+          className="h-8 w-8 text-gray-400 hover:text-white hover:bg-white/5"
         >
-          <Settings size={18} />
+          <Settings size={16} />
         </Button>
 
         <Button
+          variant="ghost"
           size="icon"
           onClick={onToggleFullscreen}
-          className="text-gray-400 hover:text-white"
+          className="h-8 w-8 text-gray-400 hover:text-white hover:bg-white/5"
         >
-          {isFullscreen ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
+          {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
         </Button>
       </div>
     </div>
