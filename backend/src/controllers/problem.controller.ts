@@ -11,6 +11,7 @@ import { Preferences } from "../models/user/Preferences";
 import { createProblemSchema, updateProblemSchema } from "../validations/problem.schema";
 import Submission from "../models/submission/Submission";
 import { Verdict } from "../models/submission/verdict";
+import { redis } from "../config/redis";
 
 // Helper function to generate slug from title
 const generateSlug = (title: string): string => {
@@ -173,6 +174,10 @@ export const createProblem = async (req: Request, res: Response) => {
     // Fetch the complete problem with all related data
     const completeProblem = await getCompleteProblemData(problem._id);
 
+    // Clear problem list caches
+    const keys = await redis.keys("problem:list:*");
+    if (keys.length > 0) await redis.del(...keys);
+
     return res.status(201).json({
       success: true,
       message: "Problem created successfully",
@@ -200,6 +205,49 @@ export const createProblem = async (req: Request, res: Response) => {
 export const getProblems = async (req: Request, res: Response) => {
   try {
     const { difficulty, page = 1, limit = 10, search, tags, companies, status } = req.query;
+
+    // Cache key based on query params (excluding user-specific status for now)
+    // Actually, status depends on user, so it's not cacheable globally if status is used.
+    // If status is used, we skip cache or cache per user? 
+    // Let's cache the BASE results and handle user-specific enrichment after.
+    const queryKey = `problem:list:${JSON.stringify({ difficulty, page, limit, search, tags, companies })}`;
+
+    // We only use cache if status filter is NOT present, because status is user-dependent
+    let cachedData = null;
+    if (!status) {
+      cachedData = await redis.get(queryKey);
+    }
+
+    if (cachedData) {
+      const { enrichedProblems, total, pageNum, limitNum } = JSON.parse(cachedData);
+
+      // Still need to handle user-specific solved status even if from cache
+      const userId = (req as any).user?._id;
+      let solvedProblemIds: string[] = [];
+      if (userId) {
+        const solvedSubmissions = await Submission.find({
+          user: userId,
+          verdict: Verdict.ACCEPTED
+        }).distinct("problem");
+        solvedProblemIds = solvedSubmissions.map(id => id.toString());
+      }
+
+      const finalProblems = enrichedProblems.map((p: any) => ({
+        ...p,
+        isSolved: solvedProblemIds.includes(p._id.toString())
+      }));
+
+      return res.json({
+        success: true,
+        data: finalProblems,
+        pagination: {
+          page: pageNum,
+          limit: limitNum,
+          total,
+          pages: Math.ceil(total / limitNum),
+        },
+      });
+    }
 
     const pageNum = parseInt(page as string, 10);
     const limitNum = parseInt(limit as string, 10);
@@ -343,6 +391,16 @@ export const getProblems = async (req: Request, res: Response) => {
     // Get total count
     const total = await Problem.countDocuments(query);
 
+    // Cache the results (without solved status) for 10 minutes
+    if (!status) {
+      await redis.set(queryKey, JSON.stringify({
+        enrichedProblems: enrichedProblems.map(p => ({ ...p, isSolved: false })),
+        total,
+        pageNum,
+        limitNum
+      }), "EX", 600);
+    }
+
     return res.json({
       success: true,
       data: enrichedProblems,
@@ -445,6 +503,28 @@ export const getProblem = async (req: Request, res: Response) => {
     const { slug } = req.params;
     const user = (req as any).user;
 
+    const CACHE_KEY = `problem:slug:${slug}`;
+    const cachedProblem = await redis.get(CACHE_KEY);
+
+    if (cachedProblem) {
+      const problemData = JSON.parse(cachedProblem);
+
+      // Still need to check if THIS specific user solved it
+      const solvedStatus = await Submission.findOne({
+        user: user._id,
+        problem: problemData._id,
+        verdict: Verdict.ACCEPTED
+      });
+
+      return res.json({
+        success: true,
+        data: {
+          ...problemData,
+          isSolved: !!solvedStatus
+        },
+      });
+    }
+
     const problem = await Problem.findOne({ slug }).select("-__v -createdAt -updatedAt -createdBy");
 
     if (!problem) {
@@ -481,20 +561,25 @@ export const getProblem = async (req: Request, res: Response) => {
     ]);
 
 
+    const result = {
+      ...problem.toObject(),
+      description: description?.description || "",
+      constraints: description?.constraints || [],
+      examples: examples || [],
+      testcases: testcases || [],
+      boilerplates: boilerplates || [],
+      tags: tags.map((t) => t.tag),
+      companyTags: companyTags.map((ct) => ct.company),
+      preferences,
+      isSolved: !!solvedStatus
+    };
+
+    // Cache for 10 minutes (masking isSolved as it's user-specific)
+    await redis.set(CACHE_KEY, JSON.stringify({ ...result, isSolved: false }), "EX", 600);
+
     return res.json({
       success: true,
-      data: {
-        ...problem.toObject(),
-        description: description?.description || "",
-        constraints: description?.constraints || [],
-        examples: examples || [],
-        testcases: testcases || [],
-        boilerplates: boilerplates || [],
-        tags: tags.map((t) => t.tag),
-        companyTags: companyTags.map((ct) => ct.company),
-        preferences,
-        isSolved: !!solvedStatus
-      },
+      data: result,
     });
   } catch (error) {
     console.error("Error in getProblem", error);
@@ -652,6 +737,14 @@ export const updateProblem = async (req: Request, res: Response) => {
     // Fetch the complete updated problem
     const completeProblem = await getCompleteProblemData(id);
 
+    // Clear relevant caches
+    await redis.del(`problem:slug:${existingProblem.slug}`);
+    if (updateData.slug && updateData.slug !== existingProblem.slug) {
+      await redis.del(`problem:slug:${updateData.slug}`);
+    }
+    const keys = await redis.keys("problem:list:*");
+    if (keys.length > 0) await redis.del(...keys);
+
     return res.json({
       success: true,
       message: "Problem updated successfully",
@@ -700,6 +793,11 @@ export const deleteProblem = async (req: Request, res: Response) => {
       ProblemCompanyTag.deleteMany({ problem: id }),
       ProblemStats.deleteMany({ problem: id }),
     ]);
+
+    // Clear relevant caches
+    await redis.del(`problem:slug:${problem.slug}`);
+    const keys = await redis.keys("problem:list:*");
+    if (keys.length > 0) await redis.del(...keys);
 
     return res.json({
       success: true,

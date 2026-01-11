@@ -167,6 +167,16 @@ export const submitWorker = new Worker<SubmitJobData, void>(
         await stats.save();
       }
 
+      // Clear relevant caches since new submission data is now in DB
+      const cachesToClear = [
+        "leaderboard:top50",
+        "admin:dashboard:stats",
+        "admin:submissions:daily",
+        "admin:ratio:ac-vs-wa",
+        "admin:problems:most-solved"
+      ];
+      await redis.del(...cachesToClear);
+
       console.log(`Submission ${submissionId} completed with verdict: ${finalVerdict}`);
     } catch (error: any) {
       console.error(`Error processing submit job ${job.id}:`, error);
@@ -182,7 +192,7 @@ export const submitWorker = new Worker<SubmitJobData, void>(
   },
   {
     connection: redis,
-    concurrency: 1, 
+    concurrency: 1,
   }
 );
 

@@ -4,10 +4,21 @@ import { Problem } from "../models/problem/Problem";
 import Submission from "../models/submission/Submission";
 import { Stats } from "../models/user/Stats";
 import { Verdict } from "../models/submission/verdict";
+import { redis } from "../config/redis";
 
 // Get dashboard stats
 export const getDashboardStats = async (req: Request, res: Response) => {
   try {
+    const CACHE_KEY = "admin:dashboard:stats";
+    const cachedStats = await redis.get(CACHE_KEY);
+
+    if (cachedStats) {
+      return res.json({
+        success: true,
+        data: JSON.parse(cachedStats),
+      });
+    }
+
     const [
       totalProblems,
       totalUsers,
@@ -24,16 +35,20 @@ export const getDashboardStats = async (req: Request, res: Response) => {
       User.countDocuments({ banned: true }),
     ]);
 
+    const stats = {
+      totalProblems,
+      totalUsers,
+      totalSubmissions,
+      totalAccepted,
+      totalAdmins,
+      totalBannedUsers,
+    };
+
+    await redis.set(CACHE_KEY, JSON.stringify(stats), "EX", 1800);
+
     return res.json({
       success: true,
-      data: {
-        totalProblems,
-        totalUsers,
-        totalSubmissions,
-        totalAccepted,
-        totalAdmins,
-        totalBannedUsers,
-      },
+      data: stats,
     });
   } catch (error) {
     console.error("Error in getDashboardStats:", error);
@@ -47,6 +62,16 @@ export const getDashboardStats = async (req: Request, res: Response) => {
 // Get submissions per day for the last 30 days
 export const getSubmissionsPerDay = async (req: Request, res: Response) => {
   try {
+    const CACHE_KEY = "admin:submissions:daily";
+    const cachedSubmissions = await redis.get(CACHE_KEY);
+
+    if (cachedSubmissions) {
+      return res.json({
+        success: true,
+        data: JSON.parse(cachedSubmissions),
+      });
+    }
+
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
@@ -69,6 +94,8 @@ export const getSubmissionsPerDay = async (req: Request, res: Response) => {
       },
     ]);
 
+    await redis.set(CACHE_KEY, JSON.stringify(submissions), "EX", 1800);
+
     return res.json({
       success: true,
       data: submissions,
@@ -85,18 +112,32 @@ export const getSubmissionsPerDay = async (req: Request, res: Response) => {
 // Get AC vs WA ratio
 export const getAcVsWaRatio = async (req: Request, res: Response) => {
   try {
+    const CACHE_KEY = "admin:ratio:ac-vs-wa";
+    const cachedRatio = await redis.get(CACHE_KEY);
+
+    if (cachedRatio) {
+      return res.json({
+        success: true,
+        data: JSON.parse(cachedRatio),
+      });
+    }
+
     const [accepted, wrongAnswer] = await Promise.all([
       Submission.countDocuments({ verdict: Verdict.ACCEPTED }),
       Submission.countDocuments({ verdict: Verdict.WRONG_ANSWER }),
     ]);
 
+    const ratioData = {
+      accepted,
+      wrongAnswer,
+      total: accepted + wrongAnswer,
+    };
+
+    await redis.set(CACHE_KEY, JSON.stringify(ratioData), "EX", 1800);
+
     return res.json({
       success: true,
-      data: {
-        accepted,
-        wrongAnswer,
-        total: accepted + wrongAnswer,
-      },
+      data: ratioData,
     });
   } catch (error) {
     console.error("Error in getAcVsWaRatio:", error);
@@ -110,6 +151,16 @@ export const getAcVsWaRatio = async (req: Request, res: Response) => {
 // Get most solved problems
 export const getMostSolvedProblems = async (req: Request, res: Response) => {
   try {
+    const CACHE_KEY = "admin:problems:most-solved";
+    const cachedProblems = await redis.get(CACHE_KEY);
+
+    if (cachedProblems) {
+      return res.json({
+        success: true,
+        data: JSON.parse(cachedProblems),
+      });
+    }
+
     const problems = await Submission.aggregate([
       {
         $match: { verdict: Verdict.ACCEPTED },
@@ -149,6 +200,8 @@ export const getMostSolvedProblems = async (req: Request, res: Response) => {
       },
     ]);
 
+    await redis.set(CACHE_KEY, JSON.stringify(problems), "EX", 1800);
+
     return res.json({
       success: true,
       data: problems,
@@ -165,6 +218,16 @@ export const getMostSolvedProblems = async (req: Request, res: Response) => {
 // Get difficulty distribution
 export const getDifficultyDistribution = async (req: Request, res: Response) => {
   try {
+    const CACHE_KEY = "admin:problems:difficulty-distribution";
+    const cachedDist = await redis.get(CACHE_KEY);
+
+    if (cachedDist) {
+      return res.json({
+        success: true,
+        data: JSON.parse(cachedDist),
+      });
+    }
+
     const distribution = await Problem.aggregate([
       {
         $group: {
@@ -180,6 +243,8 @@ export const getDifficultyDistribution = async (req: Request, res: Response) => 
         },
       },
     ]);
+
+    await redis.set(CACHE_KEY, JSON.stringify(distribution), "EX", 1800);
 
     return res.json({
       success: true,
