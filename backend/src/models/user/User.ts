@@ -19,6 +19,11 @@ export interface IUser extends Document {
   verificationToken?: string;
   resetPasswordToken?: string;
   resetPasswordExpire?: Date;
+
+  // Streak tracking
+  currentStreak: number;
+  longestStreak: number;
+  lastActivityDate?: Date;
 }
 
 const userSchema = new Schema<IUser>(
@@ -47,6 +52,11 @@ const userSchema = new Schema<IUser>(
     verificationToken: String,
     resetPasswordToken: String,
     resetPasswordExpire: Date,
+
+    // Streak tracking
+    currentStreak: { type: Number, default: 0 },
+    longestStreak: { type: Number, default: 0 },
+    lastActivityDate: Date,
   },
   { timestamps: true }
 );

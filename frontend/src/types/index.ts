@@ -12,6 +12,8 @@ export interface User {
   avatar?: string;
   bio?: string;
   role: "user" | "admin";
+  currentStreak?: number;
+  longestStreak?: number;
 }
 
 export interface UserStats {

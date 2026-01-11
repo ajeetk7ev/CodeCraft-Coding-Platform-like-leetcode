@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { User } from "../models/user/User";
 import { signupSchema, loginSchema } from "../validations/auth.schema";
 import { generateToken } from "../utils/generateToken";
+import { updateUserStreak } from "../utils/streak.utils";
 
 
 export const signup = async (req: Request, res: Response) => {
@@ -14,7 +15,7 @@ export const signup = async (req: Request, res: Response) => {
         .json({ success: false, errors: parsed.error.flatten().fieldErrors });
     }
 
-    const {fullName, username, email, password } = parsed.data;
+    const { fullName, username, email, password } = parsed.data;
 
     const existingUser = await User.findOne({ $or: [{ email }, { username }] });
     if (existingUser) {
@@ -67,11 +68,14 @@ export const login = async (req: Request, res: Response) => {
     const { email, password } = parsed.data;
 
     const user = await User.findOne({ email });
-    if (!user) return res.status(404).json({success:false, message: "User not found" });
+    if (!user) return res.status(404).json({ success: false, message: "User not found" });
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch)
-      return res.status(400).json({success:false, message: "Invalid credentials" });
+      return res.status(400).json({ success: false, message: "Invalid credentials" });
+
+    // Update user streak
+    const updatedUser = await updateUserStreak((user._id as string).toString());
 
     const token = generateToken(user._id);
 
@@ -79,17 +83,19 @@ export const login = async (req: Request, res: Response) => {
       success: true,
       message: "Login successful",
       user: {
-        id: user._id,
-        username: user.username,
-        fullName: user.fullName,
-        email: user.email,
-        avatar: user.avatar,
-        role: user.role,
+        id: updatedUser._id,
+        username: updatedUser.username,
+        fullName: updatedUser.fullName,
+        email: updatedUser.email,
+        avatar: updatedUser.avatar,
+        role: updatedUser.role,
+        currentStreak: updatedUser.currentStreak,
+        longestStreak: updatedUser.longestStreak,
       },
       token,
     });
   } catch (error) {
     console.log("Error in login", error);
-    return res.status(500).json({success:false, message: "Server error" });
+    return res.status(500).json({ success: false, message: "Server error" });
   }
 };

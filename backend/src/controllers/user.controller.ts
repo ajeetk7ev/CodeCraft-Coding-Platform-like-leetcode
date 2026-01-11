@@ -219,3 +219,35 @@ export const updatePreferences = async (req: Request, res: Response) => {
     });
   }
 };
+
+export const getStreak = async (req: Request, res: Response) => {
+  try {
+    const user = (req as any).user;
+
+    const userData = await User.findById(user._id).select(
+      "currentStreak longestStreak"
+    );
+
+    if (!userData) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        currentStreak: userData.currentStreak,
+        longestStreak: userData.longestStreak,
+      },
+    });
+  } catch (error) {
+    console.error("Get Streak Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+

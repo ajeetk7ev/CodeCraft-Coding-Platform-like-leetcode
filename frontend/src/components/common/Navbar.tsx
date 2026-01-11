@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 import { useAuthStore } from "@/stores/authStore";
+import StreakIcon from "./StreakIcon";
 
 export default function Navbar() {
   const { token, user } = useAuthStore();
@@ -52,6 +53,8 @@ export default function Navbar() {
 
         {/* Desktop Auth */}
         <div className="hidden md:flex items-center gap-4">
+          {token && <StreakIcon />}
+
           {!token && (
             <Link
               to="/login"
@@ -168,17 +171,20 @@ export default function Navbar() {
 
 function NavItem({ label, to }: { label: string; to: string }) {
   const location = useLocation();
-  const isActive = location.pathname.startsWith(to);
+
+  const isActive =
+    to === "/"
+      ? location.pathname === "/"
+      : location.pathname.startsWith(to);
 
   return (
     <Link
       to={to}
       className={`
         px-3 py-1.5 rounded-md transition
-        ${
-          isActive
-            ? "bg-gray-800 text-white"
-            : "text-gray-400 hover:bg-gray-800 hover:text-white"
+        ${isActive
+          ? "bg-gray-800 text-white"
+          : "text-gray-400 hover:bg-gray-800 hover:text-white"
         }
       `}
     >
@@ -186,6 +192,7 @@ function NavItem({ label, to }: { label: string; to: string }) {
     </Link>
   );
 }
+
 
 
 /* ---------------- Mobile Nav ---------------- */
@@ -273,7 +280,11 @@ function MobileNavItem({
   onClick: () => void;
 }) {
   const location = useLocation();
-  const isActive = location.pathname.startsWith(to);
+
+  const isActive =
+    to === "/"
+      ? location.pathname === "/"
+      : location.pathname.startsWith(to);
 
   return (
     <Link
@@ -281,10 +292,9 @@ function MobileNavItem({
       onClick={onClick}
       className={`
         flex items-center gap-3 px-4 py-3 rounded-md text-lg transition
-        ${
-          isActive
-            ? "bg-gray-800 text-white font-semibold"
-            : "text-gray-300 hover:bg-gray-800 hover:text-white"
+        ${isActive
+          ? "bg-gray-800 text-white font-semibold"
+          : "text-gray-300 hover:bg-gray-800 hover:text-white"
         }
       `}
     >
@@ -293,5 +303,6 @@ function MobileNavItem({
     </Link>
   );
 }
+
 
 

@@ -33,6 +33,7 @@ export default function ProblemView() {
     cancelPolling,
     runCodeLoading,
     submitCodeLoading,
+    clear: clearSubmission,
   } = useSubmissionStore();
 
   const rootRef = useRef<HTMLDivElement>(null);
@@ -73,6 +74,13 @@ export default function ProblemView() {
       }))
     );
   }, [problem]);
+
+  /* -------- open submit modal when result received -------- */
+  useEffect(() => {
+    if (submissionResult) {
+      setShowSubmitModal(true);
+    }
+  }, [submissionResult]);
 
   useEffect(() => {
     return () => {
@@ -250,7 +258,10 @@ export default function ProblemView() {
       <SubmitResultModal
         open={showSubmitModal}
         result={submissionResult}
-        onClose={() => setShowSubmitModal(false)}
+        onClose={() => {
+          setShowSubmitModal(false);
+          clearSubmission();
+        }}
       />
     </div>
   );

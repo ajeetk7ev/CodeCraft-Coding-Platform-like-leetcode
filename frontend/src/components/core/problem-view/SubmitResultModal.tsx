@@ -14,6 +14,9 @@ export default function SubmitResultModal({
 }: Props) {
   const [show, setShow] = useState(false);
 
+  console.log("result ", result);
+  console.log("open ", open);
+
   useEffect(() => {
     if (open) {
       setShow(true);
@@ -129,8 +132,8 @@ export default function SubmitResultModal({
             <button
               onClick={onClose}
               className={`w-full py-3.5 rounded-xl font-bold text-sm tracking-wide transition-all shadow-lg hover:shadow-xl active:scale-[0.98] flex items-center justify-center gap-2 ${isAccepted
-                  ? "bg-green-500 hover:bg-green-400 text-black shadow-green-500/20"
-                  : "bg-white hover:bg-gray-200 text-black shadow-white/10"
+                ? "bg-green-500 hover:bg-green-400 text-black shadow-green-500/20"
+                : "bg-white hover:bg-gray-200 text-black shadow-white/10"
                 }`}
             >
               {isAccepted ? (
