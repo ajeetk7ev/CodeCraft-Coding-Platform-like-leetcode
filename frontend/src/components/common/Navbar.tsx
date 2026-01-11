@@ -1,5 +1,5 @@
 import { Code2, Menu, X } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import {
   DropdownMenu,
@@ -26,6 +26,7 @@ export default function Navbar() {
   const { token, user } = useAuthStore();
   const [open, setOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     setOpen(false);
@@ -124,7 +125,10 @@ export default function Navbar() {
 
                 {/* LOGOUT */}
                 <DropdownMenuItem
-                  onClick={() => useAuthStore.getState().logout()}
+                  onClick={() => {
+                    useAuthStore.getState().logout();
+                    navigate("/");
+                  }}
                   className="
           flex items-center gap-2 rounded-md px-2 py-2
           text-red-400

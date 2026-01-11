@@ -15,6 +15,8 @@ import Users from "./pages/admin/Users";
 import Settings from "./pages/admin/Settings";
 import Leaderboard from "./pages/Leaderboard";
 import { useAuthStore } from "./stores/authStore";
+import ProtectedRoute from "./components/routing/ProtectedRoute";
+import PublicRoute from "./components/routing/PublicRoute";
 
 function App() {
   const { loadUser } = useAuthStore();
@@ -26,14 +28,49 @@ function App() {
   return (
     <div>
       <Routes>
+        {/* Public Routes - Accessible to everyone */}
         <Route path="/" element={<Home />} />
-        <Route path="/signup" element={<Signup />} />
-        <Route path="/login" element={<Login />} />
         <Route path="/problems" element={<Problems />} />
         <Route path="/problems/:slug" element={<ProblemView />} />
         <Route path="/leaderboard" element={<Leaderboard />} />
-        <Route path="/profile/:username" element={<Profile />} />
-        <Route path="/admin" element={<AdminDashboard />}>
+
+        {/* Auth Routes - Only accessible when NOT logged in */}
+        <Route
+          path="/signup"
+          element={
+            <PublicRoute>
+              <Signup />
+            </PublicRoute>
+          }
+        />
+        <Route
+          path="/login"
+          element={
+            <PublicRoute>
+              <Login />
+            </PublicRoute>
+          }
+        />
+
+        {/* Protected Routes - Require authentication */}
+        <Route
+          path="/profile/:username"
+          element={
+            <ProtectedRoute>
+              <Profile />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Admin Routes - Protected */}
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute>
+              <AdminDashboard />
+            </ProtectedRoute>
+          }
+        >
           <Route index element={<Dashboard />} />
           <Route path="analytics" element={<Analytics />} />
           <Route path="users" element={<Users />} />
