@@ -8,6 +8,7 @@ import SubmitResultModal from "@/components/core/problem-view/SubmitResultModal"
 
 import { useProblemStore } from "@/stores/problemStore";
 import { useSubmissionStore } from "@/stores/submissionStore";
+import { useAuthStore } from "@/stores/authStore";
 import ProblemDetails from "@/components/core/problem-view/ProblemDetails";
 
 type RunTestcase = {
@@ -24,6 +25,8 @@ export default function ProblemView() {
 
   const { problem, loading, error, fetchProblemBySlug, clearProblem } =
     useProblemStore();
+
+  const { fetchUser } = useAuthStore();
 
   const {
     runCode,
@@ -79,8 +82,11 @@ export default function ProblemView() {
   useEffect(() => {
     if (submissionResult) {
       setShowSubmitModal(true);
+      if (submissionResult.verdict === "Accepted") {
+        fetchUser();
+      }
     }
-  }, [submissionResult]);
+  }, [submissionResult, fetchUser]);
 
   useEffect(() => {
     return () => {

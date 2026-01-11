@@ -1046,7 +1046,6 @@ export default function ProblemManagement() {
             <div className="p-6 border-t border-slate-800/80 bg-slate-900/50 backdrop-blur-md flex items-center justify-between mt-auto sticky bottom-0 z-10">
               <div className="flex gap-2">
                 <Button
-                  variant="ghost"
                   onClick={() => {
                     const tabs = ["basic", "content", "boilerplates", "examples", "testcases"];
                     const currentIdx = tabs.indexOf(activeTab);
@@ -1059,7 +1058,7 @@ export default function ProblemManagement() {
                   Previous
                 </Button>
                 <Button
-                  variant="ghost"
+
                   onClick={() => {
                     const tabs = ["basic", "content", "boilerplates", "examples", "testcases"];
                     const currentIdx = tabs.indexOf(activeTab);
@@ -1077,7 +1076,7 @@ export default function ProblemManagement() {
                 <Button
                   variant="ghost"
                   onClick={() => setFormOpen(false)}
-                  className="rounded-xl text-slate-400 hover:bg-slate-800 h-11 px-6 font-medium"
+                  className="rounded-xl text-slate-400 hover:bg-slate-800 hover:text-slate-200 h-11 px-6 font-medium"
                 >
                   Cancel
                 </Button>

@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { useProfileStore } from "@/stores/profileStore";
 import { Camera, LoaderCircle, Github, Linkedin, User, MessageSquare, AtSign, Save, X } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+
 
 interface Props {
   open: boolean;

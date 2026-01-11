@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 import { User } from "../models/user/User";
 import { signupSchema, loginSchema } from "../validations/auth.schema";
 import { generateToken } from "../utils/generateToken";
-import { updateUserStreak } from "../utils/streak.utils";
+import { checkAndResetStreak } from "../utils/streak.utils";
 
 
 export const signup = async (req: Request, res: Response) => {
@@ -80,8 +80,9 @@ export const login = async (req: Request, res: Response) => {
     if (!isMatch)
       return res.status(400).json({ success: false, message: "Invalid credentials" });
 
-    // Update user streak
-    const updatedUser = await updateUserStreak((user._id as string).toString());
+    // Check and Reset user streak if day missed
+    const checkResult = await checkAndResetStreak((user._id as string).toString());
+    const updatedUser = checkResult || user;
 
     const token = generateToken(user._id);
 

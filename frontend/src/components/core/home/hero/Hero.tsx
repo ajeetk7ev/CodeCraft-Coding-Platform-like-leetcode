@@ -14,7 +14,7 @@ export default function Hero() {
       <div className="absolute top-1/4 -left-20 w-72 h-72 bg-indigo-500/20 rounded-full blur-[128px] pointer-events-none" />
       <div className="absolute bottom-1/4 -right-20 w-72 h-72 bg-purple-500/20 rounded-full blur-[128px] pointer-events-none" />
 
-      <div className="relative z-10 max-w-5xl mx-auto px-6 text-center">
+      <div className="relative z-10 max-w-5xl mx-auto px-6 text-center pt-24 sm:pt-0">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -83,7 +83,7 @@ export default function Hero() {
             asChild
             variant="outline"
             size="lg"
-            className="border-gray-800 bg-gray-900/50 hover:bg-gray-800 text-gray-300 px-8 py-6 text-lg rounded-xl backdrop-blur-sm transition-all hover:scale-105"
+            className="border-gray-800 bg-gray-900/50 hover:bg-gray-800 text-gray-300 hover:text-gray-200 px-8 py-6 text-lg rounded-xl backdrop-blur-sm transition-all hover:scale-105"
           >
             <Link to="/contests">View Contests</Link>
           </Button>

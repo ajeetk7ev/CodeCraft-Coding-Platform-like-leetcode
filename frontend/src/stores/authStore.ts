@@ -34,6 +34,7 @@ interface AuthState {
   loadUser: () => void;
   logout: () => void;
   setUser: (user: User) => void;
+  fetchUser: () => Promise<void>;
 }
 
 const initialToken = getFromLocalStorage("token");
@@ -114,7 +115,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   // ================= LOAD USER =================
-  loadUser: () => {
+  loadUser: async () => {
     const user = getFromLocalStorage("user");
     const token = getFromLocalStorage("token");
 
@@ -122,6 +123,18 @@ export const useAuthStore = create<AuthState>((set) => ({
       set({ user, token });
       // Set axios default headers
       axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+
+      // Refetch user data to ensure latest streak/stats
+      try {
+        const res = await axios.get(`${API_URL}/user/profile`);
+        if (res.data.success) {
+          const { user: fetchedUser } = res.data.data;
+          setToLocalStorage("user", fetchedUser);
+          set({ user: fetchedUser });
+        }
+      } catch (error) {
+        console.error("Failed to refetch user in loadUser:", error);
+      }
     }
   },
 
@@ -129,8 +142,24 @@ export const useAuthStore = create<AuthState>((set) => ({
   logout: () => {
     removeFromLocalStorage("user");
     removeFromLocalStorage("token");
-    set({ user: null, token: null });
     // Remove axios default headers
     delete axios.defaults.headers.common["Authorization"];
+  },
+
+  // ================= FETCH USER =================
+  fetchUser: async () => {
+    try {
+      const res = await axios.get(`${API_URL}/user/profile`);
+      if (res.data.success) {
+        const { user } = res.data.data;
+        // The backend returns user inside a data object, let's verify the structure
+        // Looking at user.controller.ts: responseData = { success: true, data: { user: userResponse, stats: ... } }
+
+        setToLocalStorage("user", user);
+        set({ user });
+      }
+    } catch (error) {
+      console.error("Failed to fetch user:", error);
+    }
   },
 }));

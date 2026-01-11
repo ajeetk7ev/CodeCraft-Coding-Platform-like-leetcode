@@ -9,7 +9,7 @@ interface ComingSoonProps {
 
 const ComingSoon: React.FC<ComingSoonProps> = ({ title, description }) => {
     return (
-        <div className="min-h-[calc(100vh-64px)] flex flex-col items-center justify-center p-6 bg-gray-950 text-white overflow-hidden relative">
+        <div className=" flex  pt-40 flex-col items-center justify-center p-6 bg-gray-950 text-white overflow-hidden relative">
             {/* Background Decorative Elements */}
             <div className="absolute top-1/4 -left-20 w-80 h-80 bg-indigo-600/20 rounded-full blur-[120px] pointer-events-none animate-pulse" />
             <div className="absolute bottom-1/4 -right-20 w-80 h-80 bg-purple-600/20 rounded-full blur-[120px] pointer-events-none animate-pulse delay-700" />

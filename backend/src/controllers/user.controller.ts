@@ -6,14 +6,18 @@ import { Request, Response } from "express";
 import Submission from "../models/submission/Submission";
 import { Problem } from "../models/problem/Problem";
 import uploadImageToCloudinary from "../utils/imageUpload";
+import { checkAndResetStreak } from "../utils/streak.utils";
 
 export const getProfile = async (req: Request, res: Response) => {
   try {
     const user = (req as any).user;
 
+    // Check and reset streak if missed
+    await checkAndResetStreak(String(user._id));
+
     // Get user data
     const userData = await User.findById(user._id).select(
-      "username fullName email gender bio avatar github linkedin role currentStreak longestStreak"
+      "username fullName email gender bio avatar github linkedin role currentStreak longestStreak lastActivity"
     );
 
     if (!userData) {
@@ -153,7 +157,7 @@ export const updateProfile = async (req: Request, res: Response) => {
         linkedin
       },
       { new: true }
-    ).select("username fullName email gender bio avatar github linkedin role currentStreak longestStreak");
+    ).select("username fullName email gender bio avatar github linkedin role currentStreak longestStreak lastActivity");
 
     if (!updatedUser) {
       return res.status(404).json({
@@ -229,6 +233,9 @@ export const updatePreferences = async (req: Request, res: Response) => {
 export const getStreak = async (req: Request, res: Response) => {
   try {
     const user = (req as any).user;
+
+    // Check and reset streak if missed
+    await checkAndResetStreak(String(user._id));
 
     const userData = await User.findById(user._id).select(
       "currentStreak longestStreak"

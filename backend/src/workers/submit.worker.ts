@@ -10,6 +10,7 @@ import { SubmissionStatus } from "../models/submission/SubmissionStatus";
 import { Stats } from "../models/user/Stats";
 import { RecentSubmission } from "../models/user/RecentSubmission";
 import { Problem } from "../models/problem/Problem";
+import { updateUserStreak } from "../utils/streak.utils";
 
 interface SubmitJobData {
   submissionId: string;
@@ -108,7 +109,54 @@ export const submitWorker = new Worker<SubmitJobData, void>(
         finalVerdict = Verdict.PARTIAL;
       }
 
-      // Update submission with results
+      // Get submission data (we need the user ID)
+      const submission = await Submission.findById(submissionId);
+      if (!submission) throw new Error("Submission not found");
+
+      if (finalVerdict === Verdict.ACCEPTED) {
+        // Update user stats and streak
+        const userId = submission.user;
+        const problem = await Problem.findById(problemId);
+        if (problem) {
+          const problemDifficulty = problem.difficulty;
+
+          // Check if user has already solved this problem
+          const existingRecentSubmission = await RecentSubmission.findOne({
+            user: userId,
+            problem: problemId,
+            status: 'Accepted'
+          });
+
+          // Only update solve counts if this is the first time solving this problem
+          if (!existingRecentSubmission) {
+            await Stats.findOneAndUpdate(
+              { user: userId },
+              {
+                $inc: {
+                  totalSolved: 1,
+                  [problemDifficulty + 'Solved']: 1
+                }
+              },
+              { new: true, upsert: true }
+            );
+          }
+
+          // Update user streak
+          await updateUserStreak(String(userId));
+
+          // Add/update recent submissions (always update timestamp)
+          await RecentSubmission.findOneAndUpdate(
+            { user: userId, problem: problemId },
+            {
+              status: 'Accepted',
+              submittedAt: new Date()
+            },
+            { upsert: true, new: true }
+          );
+        }
+      }
+
+      // Update submission with results AND mark as COMPLETED
       await Submission.findByIdAndUpdate(submissionId, {
         verdict: finalVerdict,
         status: SubmissionStatus.COMPLETED,
@@ -116,46 +164,6 @@ export const submitWorker = new Worker<SubmitJobData, void>(
         totalMemory: maxMemory,
         testcaseResults,
       });
-
-      // Get submission to access user and problem
-      const submission = await Submission.findById(submissionId).populate('user problem');
-
-      if (finalVerdict === Verdict.ACCEPTED && submission) {
-        // Update user stats
-        const userId = submission.user;
-        const problemId = submission.problem;
-        const problemDifficulty = (submission.problem as any).difficulty;
-
-        // Check if user has already solved this problem
-        const existingRecentSubmission = await RecentSubmission.findOne({
-          user: userId,
-          problem: problemId
-        });
-
-        // Only update stats if this is the first time solving this problem
-        if (!existingRecentSubmission) {
-          const stats = await Stats.findOneAndUpdate(
-            { user: userId },
-            {
-              $inc: {
-                totalSolved: 1,
-                [problemDifficulty + 'Solved']: 1
-              }
-            },
-            { new: true, upsert: true }
-          );
-        }
-
-        // Add/update recent submissions (always update timestamp)
-        await RecentSubmission.findOneAndUpdate(
-          { user: userId, problem: problemId },
-          {
-            status: 'Accepted',
-            submittedAt: new Date()
-          },
-          { upsert: true, new: true }
-        );
-      }
 
       // Update problem stats
       const stats = await ProblemStats.findOne({ problem: problemId });

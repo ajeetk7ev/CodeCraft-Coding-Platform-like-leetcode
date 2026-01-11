@@ -23,7 +23,7 @@ export interface IUser extends Document {
   // Streak tracking
   currentStreak: number;
   longestStreak: number;
-  lastActivityDate?: Date;
+  lastActivity?: Date;
 }
 
 const userSchema = new Schema<IUser>(
@@ -56,7 +56,7 @@ const userSchema = new Schema<IUser>(
     // Streak tracking
     currentStreak: { type: Number, default: 0 },
     longestStreak: { type: Number, default: 0 },
-    lastActivityDate: Date,
+    lastActivity: Date,
   },
   { timestamps: true }
 );

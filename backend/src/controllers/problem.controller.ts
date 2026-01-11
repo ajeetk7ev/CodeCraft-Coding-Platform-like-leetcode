@@ -12,6 +12,7 @@ import { createProblemSchema, updateProblemSchema } from "../validations/problem
 import Submission from "../models/submission/Submission";
 import { Verdict } from "../models/submission/verdict";
 import { redis } from "../config/redis";
+import { clearCache } from "../utils/cache.utils";
 
 // Helper function to generate slug from title
 const generateSlug = (title: string): string => {
@@ -175,8 +176,8 @@ export const createProblem = async (req: Request, res: Response) => {
     const completeProblem = await getCompleteProblemData(problem._id);
 
     // Clear problem list caches
-    const keys = await redis.keys("problem:list:*");
-    if (keys.length > 0) await redis.del(...keys);
+    // Clear problem list caches
+    await clearCache("problem:list:*");
 
     return res.status(201).json({
       success: true,
@@ -219,6 +220,7 @@ export const getProblems = async (req: Request, res: Response) => {
     }
 
     if (cachedData) {
+      console.log("Using cached data");
       const { enrichedProblems, total, pageNum, limitNum } = JSON.parse(cachedData);
 
       // Still need to handle user-specific solved status even if from cache
@@ -742,8 +744,7 @@ export const updateProblem = async (req: Request, res: Response) => {
     if (updateData.slug && updateData.slug !== existingProblem.slug) {
       await redis.del(`problem:slug:${updateData.slug}`);
     }
-    const keys = await redis.keys("problem:list:*");
-    if (keys.length > 0) await redis.del(...keys);
+    await clearCache("problem:list:*");
 
     return res.json({
       success: true,
@@ -796,8 +797,7 @@ export const deleteProblem = async (req: Request, res: Response) => {
 
     // Clear relevant caches
     await redis.del(`problem:slug:${problem.slug}`);
-    const keys = await redis.keys("problem:list:*");
-    if (keys.length > 0) await redis.del(...keys);
+    await clearCache("problem:list:*");
 
     return res.json({
       success: true,
