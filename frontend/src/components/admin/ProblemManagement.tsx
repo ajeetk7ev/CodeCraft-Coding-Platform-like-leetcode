@@ -265,15 +265,12 @@ export default function ProblemManagement() {
   return (
     <div className="space-y-8 pb-10">
       {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
         <div>
-          <h1 className="text-3xl font-bold text-slate-100 flex items-center gap-3">
-            <Layers className="h-8 w-8 text-indigo-500" />
-            Problem Management
+          <h1 className="text-4xl font-black text-white tracking-tight uppercase flex items-center gap-4">
+            Problem <span className="text-indigo-500">Management</span>
           </h1>
-          <p className="text-slate-400 mt-1">
-            Create, manage and publish coding challenges
-          </p>
+          <p className="text-slate-400 font-medium">Create, manage and publish coding challenges</p>
         </div>
 
         <Button

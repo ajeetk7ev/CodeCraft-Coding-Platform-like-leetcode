@@ -9,8 +9,8 @@ export default function Analytics() {
       transition={{ duration: 0.6 }}
       className="space-y-12 pb-12"
     >
-      <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-black text-white tracking-tight">Platform Analytics</h1>
+      <div className="flex flex-col gap-2 mb-4">
+        <h1 className="text-4xl font-black text-white tracking-tight uppercase">Platform <span className="text-indigo-500">Analytics</span></h1>
         <p className="text-slate-400 font-medium">Deep dive into submission patterns and solution trends</p>
       </div>
 

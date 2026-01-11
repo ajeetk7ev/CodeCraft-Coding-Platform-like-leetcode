@@ -1,6 +1,5 @@
 import { useState } from "react";
 import {
-  Settings,
   Shield,
   Palette,
   Globe,
@@ -38,15 +37,12 @@ const AdminSettings = () => {
   return (
     <div className="max-w-5xl mx-auto space-y-8 pb-20">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
         <div>
-          <h1 className="text-3xl font-bold text-slate-100 flex items-center gap-3">
-            <Settings className="h-8 w-8 text-indigo-500" />
-            System Configuration
+          <h1 className="text-4xl font-black text-white tracking-tight uppercase flex items-center gap-4">
+            System <span className="text-indigo-500">Configuration</span>
           </h1>
-          <p className="text-slate-400 mt-1">
-            Manage platform-wide settings, security, and appearance
-          </p>
+          <p className="text-slate-400 font-medium">Manage platform-wide settings, security, and appearance</p>
         </div>
 
         <div className="flex gap-3">

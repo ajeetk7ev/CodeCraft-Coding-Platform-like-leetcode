@@ -30,7 +30,7 @@ const Sidebar = () => {
     <motion.aside
       initial={false}
       animate={{ width: collapsed ? 84 : 280 }}
-      className="fixed top-16 left-0 bottom-0 bg-slate-950/80 backdrop-blur-xl border-r border-slate-800/50 flex flex-col z-40 transition-all duration-300 ease-in-out shadow-2xl shadow-indigo-500/5"
+      className="hidden md:flex fixed top-16 left-0 bottom-0 bg-slate-950/80 backdrop-blur-xl border-r border-slate-800/50 flex-col z-40 transition-all duration-300 ease-in-out shadow-2xl shadow-indigo-500/5"
     >
       {/* Profile Section */}
       <div className="p-4 border-b border-white/5 bg-white/[0.02]">

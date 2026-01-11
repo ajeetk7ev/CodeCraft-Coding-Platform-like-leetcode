@@ -1,50 +1,42 @@
 import Sidebar from "@/components/admin/Sidebar";
+import BottomNav from "@/components/admin/BottomNav";
+import Navbar from "@/components/common/Navbar";
+import { useDashboardCollapsedStore } from "@/stores/dashboardCollapsedStore";
 import { Outlet } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { useDashboardCollapsedStore } from "@/stores/dashboardCollapsedStore";
-import Navbar from "@/components/common/Navbar";
 
-const AdminDashboard = () => {
-  const { collapsed, setCollapsed } = useDashboardCollapsedStore();
-  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
-
+export default function AdminLayout() {
+  const collapsed = useDashboardCollapsedStore((state) => state.collapsed);
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768);
 
   useEffect(() => {
-    setCollapsed(window.innerWidth < 1024);
-    const handleResize = () => {
-      setIsDesktop(window.innerWidth >= 1024);
-      setCollapsed(window.innerWidth < 1024);
-    };
+    const handleResize = () => setIsDesktop(window.innerWidth >= 768);
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   return (
-    <>
+    <div className="min-h-screen bg-slate-950 flex flex-col pt-16">
       <Navbar />
-      <div className="flex min-h-screen bg-slate-950 text-slate-100 pt-24">
-        {/* Navbar */}
 
-        {/* Sidebar */}
-        <div className="lg:fixed lg:inset-y-0 lg:left-0">
-          <Sidebar />
-        </div>
+      <div className="flex flex-1 relative">
+        <Sidebar />
 
         {/* Main content */}
         <main
-          className="flex-1 overflow-y-auto p-6 transition-all duration-300"
+          className={`flex-1 overflow-y-auto overflow-x-hidden p-6 md:p-10 lg:p-12 pb-32 md:pb-12 transition-all duration-500 w-full`}
           style={{
-            marginLeft: isDesktop ? (collapsed ? "5.25rem" : "17.5rem") : "0",
+            marginLeft: isDesktop ? (collapsed ? "5.5rem" : "18rem") : "0",
+            paddingRight: isDesktop ? "3rem" : "1.5rem",
           }}
         >
-          <Outlet />
+          <div className="max-w-7xl mx-auto">
+            <Outlet />
+          </div>
         </main>
       </div>
 
-
-    </>
-
+      <BottomNav />
+    </div>
   );
-};
-
-export default AdminDashboard;
+}

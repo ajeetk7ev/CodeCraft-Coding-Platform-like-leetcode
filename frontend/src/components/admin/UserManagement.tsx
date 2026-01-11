@@ -12,7 +12,6 @@ import {
   Calendar,
   MoreVertical,
   FilterX,
-  Users,
 } from "lucide-react";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
@@ -136,13 +135,12 @@ const UserManagement = () => {
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
       {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
         <div>
-          <h1 className="text-3xl font-bold text-white tracking-tight flex items-center gap-3">
-            <Users className="h-8 w-8 text-indigo-400" />
-            User Management
+          <h1 className="text-4xl font-black text-white tracking-tight uppercase flex items-center gap-4">
+            User <span className="text-indigo-500">Management</span>
           </h1>
-          <p className="text-slate-400 mt-1">Manage platform users, roles, and account status.</p>
+          <p className="text-slate-400 font-medium">Manage platform users, roles, and account status</p>
         </div>
 
         <div className="flex items-center gap-2">
