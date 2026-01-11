@@ -27,7 +27,6 @@ const StatsCards = () => {
   const { token } = useAuthStore();
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [errorStatus, setErrorStatus] = useState<string | null>(null);
 
   useEffect(() => {
     fetchStats();
@@ -36,14 +35,12 @@ const StatsCards = () => {
   const fetchStats = async () => {
     try {
       setLoading(true);
-      setErrorStatus(null);
       const res = await axios.get(`${API_URL}/admin/stats`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setStats(res.data.data);
     } catch (err: any) {
       console.error("Error fetching stats:", err);
-      setErrorStatus(err.response?.data?.message || "Failed to load statistics.");
     } finally {
       setLoading(false);
     }

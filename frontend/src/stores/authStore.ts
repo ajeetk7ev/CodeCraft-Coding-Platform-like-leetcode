@@ -33,12 +33,18 @@ interface AuthState {
 
   loadUser: () => void;
   logout: () => void;
+  setUser: (user: User) => void;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: getFromLocalStorage("user"),
   token: getFromLocalStorage("token"),
   authIsLoading: false,
+
+  setUser: (user: User) => {
+    setToLocalStorage("user", user);
+    set({ user });
+  },
 
   // ================= SIGNUP =================
   signup: async (fullName, username, email, password) => {

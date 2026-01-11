@@ -13,7 +13,7 @@ export const getProfile = async (req: Request, res: Response) => {
 
     // Get user data
     const userData = await User.findById(user._id).select(
-      "username fullName email gender bio avatar github linkedin"
+      "username fullName email gender bio avatar github linkedin role currentStreak longestStreak"
     );
 
     if (!userData) {
@@ -33,6 +33,9 @@ export const getProfile = async (req: Request, res: Response) => {
       avatar: userData.avatar,
       github: userData.github,
       linkedin: userData.linkedin,
+      role: userData.role,
+      currentStreak: userData.currentStreak,
+      longestStreak: userData.longestStreak,
     };
 
     // Get stats (create if doesn't exist)
@@ -150,7 +153,7 @@ export const updateProfile = async (req: Request, res: Response) => {
         linkedin
       },
       { new: true }
-    ).select("username fullName email gender bio avatar github linkedin");
+    ).select("username fullName email gender bio avatar github linkedin role currentStreak longestStreak");
 
     if (!updatedUser) {
       return res.status(404).json({
@@ -169,6 +172,9 @@ export const updateProfile = async (req: Request, res: Response) => {
       avatar: updatedUser.avatar,
       github: updatedUser.github,
       linkedin: updatedUser.linkedin,
+      role: updatedUser.role,
+      currentStreak: updatedUser.currentStreak,
+      longestStreak: updatedUser.longestStreak,
     };
 
     return res.status(200).json({

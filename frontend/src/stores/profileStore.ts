@@ -2,7 +2,7 @@ import { create } from "zustand";
 import axios from "axios";
 import { API_URL } from "@/utils/api";
 import type { ProfileData, User } from "@/types";
-import { getFromLocalStorage, setToLocalStorage } from "@/utils/localstorage";
+import { getFromLocalStorage } from "@/utils/localstorage";
 import { useAuthStore } from "./authStore";
 
 interface ProfileResponse {
@@ -67,7 +67,7 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
   },
 
   updateProfile: async (data: FormData | UpdateProfileRequest) => {
-    set({error: null });
+    set({ error: null });
 
     try {
       const token = getFromLocalStorage("token");
@@ -93,15 +93,16 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
         const currentProfile = get().profile;
         if (currentProfile && res.data.data) {
           const user = res.data.data;
-          setToLocalStorage("user", user);
-          useAuthStore.getInitialState().user = user;
+          // Update auth store using the new setUser method
+          useAuthStore.getState().setUser(user);
+
           set({
             profile: {
               ...currentProfile,
               user: user,
             }
           });
-        } 
+        }
         return {
           success: true,
           message: res.data.message || "Profile updated successfully",

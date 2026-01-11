@@ -45,6 +45,12 @@ export const signup = async (req: Request, res: Response) => {
         email: user.email,
         avatar: user.avatar,
         role: user.role,
+        currentStreak: user.currentStreak,
+        longestStreak: user.longestStreak,
+        gender: user.gender,
+        bio: user.bio,
+        github: user.github,
+        linkedin: user.linkedin,
       },
       token,
     });
@@ -91,6 +97,10 @@ export const login = async (req: Request, res: Response) => {
         role: updatedUser.role,
         currentStreak: updatedUser.currentStreak,
         longestStreak: updatedUser.longestStreak,
+        gender: updatedUser.gender,
+        bio: updatedUser.bio,
+        github: updatedUser.github,
+        linkedin: updatedUser.linkedin,
       },
       token,
     });
