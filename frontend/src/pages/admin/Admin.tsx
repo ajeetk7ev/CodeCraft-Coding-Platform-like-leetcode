@@ -4,16 +4,20 @@ import Navbar from "@/components/common/Navbar";
 import { useDashboardCollapsedStore } from "@/stores/dashboardCollapsedStore";
 import { Outlet } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { useAuthStore } from "@/stores/authStore";
 
 export default function AdminLayout() {
   const collapsed = useDashboardCollapsedStore((state) => state.collapsed);
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768);
 
   useEffect(() => {
+
     const handleResize = () => setIsDesktop(window.innerWidth >= 768);
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+
 
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col pt-16">

@@ -23,6 +23,7 @@ import StreakIcon from "./StreakIcon";
 
 export default function Navbar() {
   const { token, user, logout } = useAuthStore();
+
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();

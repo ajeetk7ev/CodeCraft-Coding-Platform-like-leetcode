@@ -36,9 +36,14 @@ interface AuthState {
   setUser: (user: User) => void;
 }
 
+const initialToken = getFromLocalStorage("token");
+if (initialToken) {
+  axios.defaults.headers.common["Authorization"] = `Bearer ${initialToken}`;
+}
+
 export const useAuthStore = create<AuthState>((set) => ({
   user: getFromLocalStorage("user"),
-  token: getFromLocalStorage("token"),
+  token: initialToken,
   authIsLoading: false,
 
   setUser: (user: User) => {

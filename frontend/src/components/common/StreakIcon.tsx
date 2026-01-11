@@ -1,4 +1,5 @@
 import { Flame } from "lucide-react";
+import { useAuthStore } from "@/stores/authStore";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { API_URL } from "@/utils/api";
@@ -15,19 +16,36 @@ interface StreakData {
 }
 
 export default function StreakIcon() {
+    const { token, user } = useAuthStore();
     const [streakData, setStreakData] = useState<StreakData>({
-        currentStreak: 0,
-        longestStreak: 0,
+        currentStreak: user?.currentStreak || 0,
+        longestStreak: user?.longestStreak || 0,
     });
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        fetchStreakData();
-    }, []);
+        if (token) {
+            fetchStreakData();
+        } else {
+            setIsLoading(false);
+        }
+    }, [token]);
+
+    // Update internal state if user object changes (e.g. after login/profile update)
+    useEffect(() => {
+        if (user) {
+            setStreakData({
+                currentStreak: user.currentStreak || 0,
+                longestStreak: user.longestStreak || 0,
+            });
+        }
+    }, [user]);
 
     const fetchStreakData = async () => {
         try {
-            const response = await axios.get(`${API_URL}/user/streak`);
+            const response = await axios.get(`${API_URL}/user/streak`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
             if (response.data.success) {
                 setStreakData(response.data.data);
             }
