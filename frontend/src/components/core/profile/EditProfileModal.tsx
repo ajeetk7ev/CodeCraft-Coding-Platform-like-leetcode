@@ -11,12 +11,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { useProfileStore } from "@/stores/profileStore";
-import { Camera, LoaderCircle } from "lucide-react";
+import { Camera, LoaderCircle, Github, Linkedin, User, MessageSquare, AtSign, Save, X } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface Props {
   open: boolean;
   onClose: () => void;
 }
+
+const modalInputClass = "bg-slate-950/50 border-slate-800 focus:border-indigo-500 focus:ring-1 ring-indigo-500 text-slate-100 placeholder:text-slate-600 h-11 rounded-xl transition-all duration-300";
 
 export default function EditProfileModal({ open, onClose }: Props) {
   const { profile, updateProfile } = useProfileStore();
@@ -78,132 +81,171 @@ export default function EditProfileModal({ open, onClose }: Props) {
       const result = await updateProfile(formData);
 
       if (result.success) {
-        console.log("Profile updated successfully, closing modal");
         onClose();
       } else {
-        console.error("Failed to update profile:", result.message);
         alert(`Failed to update profile: ${result.message}`);
       }
     } catch (error) {
-      console.error("Error updating profile:", error);
-      alert("An error occurred while updating profile. Please try again.");
+      alert("An error occurred while updating profile.");
     } finally {
       setIsUpdating(false);
     }
   }
 
-  const handleClose = () => {
-    console.log("Modal close requested");
-    onClose();
-  };
-
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="bg-gray-950 border border-gray-800 text-gray-200 max-w-lg max-h-[90vh]">
-        <DialogHeader>
-          <DialogTitle>Edit Profile</DialogTitle>
+    <Dialog open={open} onOpenChange={(val) => !val && onClose()}>
+      <DialogContent className="bg-slate-900/90 backdrop-blur-2xl border-white/10 text-slate-200 max-w-xl rounded-[2.5rem] p-0 overflow-hidden shadow-2xl">
+        <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-transparent pointer-events-none" />
+
+        <DialogHeader className="p-8 pb-4 relative z-10">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="h-10 w-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
+                <User className="h-5 w-5 text-indigo-400" />
+              </div>
+              <div>
+                <DialogTitle className="text-xl font-black tracking-tight text-white">Edit Profile</DialogTitle>
+                <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mt-0.5">Customize Your Identity</p>
+              </div>
+            </div>
+            <button onClick={onClose} className="p-2 rounded-xl hover:bg-white/5 text-slate-500 hover:text-white transition-colors">
+              <X className="h-5 w-5" />
+            </button>
+          </div>
         </DialogHeader>
 
-        {/* Avatar Section */}
-        <div className="flex justify-center">
-          <div
-            className="relative group cursor-pointer"
-            onClick={() => fileRef.current?.click()}
-          >
-            <img
-              src={form.avatar || "https://i.pravatar.cc/150?img=12"}
-              className="w-28 h-28 rounded-full border-4 border-gray-800 object-cover"
-            />
+        <div className="px-8 pb-8 space-y-8 relative z-10 overflow-y-auto max-h-[70vh] scrollbar-none">
+          {/* Avatar Section */}
+          <div className="flex flex-col items-center">
+            <div
+              className="relative group cursor-pointer"
+              onClick={() => fileRef.current?.click()}
+            >
+              <div className="absolute inset-0 bg-indigo-500/20 blur-2xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
+              <img
+                src={form.avatar || "https://i.pravatar.cc/150?img=12"}
+                className="w-32 h-32 rounded-[2.5rem] border-4 border-slate-950 shadow-2xl object-cover relative z-10 group-hover:scale-105 transition-transform duration-500"
+              />
 
-            <div className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
-              <Camera className="w-6 h-6 text-white" />
+              <div className="absolute inset-x-0 bottom-0 top-0 rounded-[2.5rem] bg-black/40 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition duration-500 z-20">
+                <Camera className="w-8 h-8 text-white mb-2" />
+                <span className="text-[10px] font-black text-white uppercase tracking-widest">Update</span>
+              </div>
+            </div>
+
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              hidden
+              onChange={handleAvatarChange}
+            />
+          </div>
+
+          {/* Form Fields */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Full Name</Label>
+              <div className="relative">
+                <User className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-600" />
+                <Input
+                  name="fullName"
+                  value={form.fullName}
+                  onChange={handleChange}
+                  className={`${modalInputClass} pl-11`}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Gender Identity</Label>
+              <div className="relative">
+                <AtSign className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-600 pointer-events-none" />
+                <select
+                  name="gender"
+                  value={form.gender}
+                  onChange={(e) => setForm({ ...form, gender: e.target.value })}
+                  className={`${modalInputClass} w-full pl-11 pr-4 appearance-none bg-slate-950/50 cursor-pointer`}
+                >
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="space-y-2 md:col-span-2">
+              <Label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Personal Bio</Label>
+              <div className="relative">
+                <MessageSquare className="absolute left-4 top-4 h-4 w-4 text-slate-600" />
+                <Textarea
+                  name="bio"
+                  value={form.bio}
+                  onChange={handleChange}
+                  placeholder="Tell your story..."
+                  className={`${modalInputClass} pl-11 py-3 resize-none h-24`}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">GitHub URL</Label>
+              <div className="relative">
+                <Github className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-600" />
+                <Input
+                  name="github"
+                  value={form.github}
+                  onChange={handleChange}
+                  placeholder="github.com/username"
+                  className={`${modalInputClass} pl-11`}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">LinkedIn URL</Label>
+              <div className="relative">
+                <Linkedin className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-600" />
+                <Input
+                  name="linkedin"
+                  value={form.linkedin}
+                  onChange={handleChange}
+                  placeholder="linkedin.com/in/username"
+                  className={`${modalInputClass} pl-11`}
+                />
+              </div>
             </div>
           </div>
-
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/*"
-            hidden
-            onChange={handleAvatarChange}
-          />
         </div>
 
-        {/* Form Fields */}
-        <div className="space-y-3 mt-4">
-          <div className="space-y-1.5">
-            <Label>Full Name</Label>
-            <Input
-              name="fullName"
-              value={form.fullName}
-              onChange={handleChange}
-              className="bg-gray-900 border-gray-700"
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <Label>Gender</Label>
-            <select
-              name="gender"
-              value={form.gender}
-              onChange={(e) => setForm({ ...form, gender: e.target.value })}
-              className="w-full bg-gray-900 border border-gray-700 rounded-md px-3 py-2"
+        <DialogFooter className="p-8 pt-4 bg-white/[0.02] relative z-10 border-t border-white/5">
+          <div className="flex items-center justify-end gap-3 w-full">
+            <Button
+              variant="ghost"
+              onClick={onClose}
+              disabled={isUpdating}
+              className="rounded-xl px-6 font-bold text-slate-400 hover:bg-white/5 hover:text-white transition-all uppercase tracking-widest text-[10px]"
             >
-              <option value="male">Male</option>
-              <option value="female">Female</option>
-              <option value="other">Other</option>
-            </select>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSave}
+              disabled={isUpdating}
+              className="bg-indigo-600 hover:bg-indigo-500 text-white font-black rounded-xl px-8 h-12 shadow-lg shadow-indigo-600/20 active:scale-95 transition-all flex items-center gap-3 uppercase tracking-[0.1em] text-[11px]"
+            >
+              {isUpdating ? (
+                <>
+                  <LoaderCircle className="h-4 w-4 animate-spin" />
+                  Syncing...
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4" />
+                  Save Identity
+                </>
+              )}
+            </Button>
           </div>
-
-          <div className="space-y-1.5">
-            <Label>Bio</Label>
-            <Textarea
-              name="bio"
-              value={form.bio}
-              onChange={handleChange}
-              className="bg-gray-900 border-gray-700 resize-none"
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <Label>GitHub</Label>
-            <Input
-              name="github"
-              value={form.github}
-              onChange={handleChange}
-              className="bg-gray-900 border-gray-700"
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <Label>LinkedIn</Label>
-            <Input
-              name="linkedin"
-              value={form.linkedin}
-              onChange={handleChange}
-              className="bg-gray-900 border-gray-700"
-            />
-          </div>
-        </div>
-
-        <DialogFooter className="mt-5">
-          <Button
-            variant="secondary"
-            onClick={handleClose}
-            disabled={isUpdating}
-            type="button"
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleSave}
-            disabled={isUpdating}
-            type="button"
-            className="flex items-center gap-2"
-          >
-            {isUpdating && <LoaderCircle className="h-4 w-4 animate-spin" />}
-            {isUpdating ? "Saving..." : "Save Changes"}
-          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

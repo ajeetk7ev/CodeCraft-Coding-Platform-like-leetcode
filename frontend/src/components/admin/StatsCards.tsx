@@ -7,9 +7,12 @@ import {
   CheckCircle,
   Shield,
   Ban,
+  ArrowUpRight,
 } from "lucide-react";
 import { API_URL } from "../../utils/api";
 import { useAuthStore } from "@/stores/authStore";
+import AnimatedCounter from "@/components/common/AnimatedCounter";
+import { motion } from "framer-motion";
 
 interface Stats {
   totalProblems: number;
@@ -21,14 +24,10 @@ interface Stats {
 }
 
 const StatsCards = () => {
-   const { token } = useAuthStore();
-  
-    const authHeaders = {
-      headers: { Authorization: `Bearer ${token}` },
-    };
+  const { token } = useAuthStore();
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [errorStatus, setErrorStatus] = useState<string | null>(null);
 
   useEffect(() => {
     fetchStats();
@@ -37,18 +36,14 @@ const StatsCards = () => {
   const fetchStats = async () => {
     try {
       setLoading(true);
-      setError(null);
-      const res = await axios.get(`${API_URL}/admin/stats`,authHeaders);
-      console.log("Fetched stats:", res.data);
+      setErrorStatus(null);
+      const res = await axios.get(`${API_URL}/admin/stats`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       setStats(res.data.data);
     } catch (err: any) {
       console.error("Error fetching stats:", err);
-      if (err.response?.status === 401 || err.response?.status === 403) {
-        setError("Authentication required. Please log in as admin.");
-      } else {
-        setError(err.response?.data?.message || "Failed to load statistics.");
-      
-      }
+      setErrorStatus(err.response?.data?.message || "Failed to load statistics.");
     } finally {
       setLoading(false);
     }
@@ -56,107 +51,121 @@ const StatsCards = () => {
 
   const cards = [
     {
-      title: "Total Problems",
-      value: stats?.totalProblems,
+      title: "Active Problems",
+      value: stats?.totalProblems || 0,
       icon: FileText,
-      accent: "text-indigo-400",
+      color: "indigo",
+      description: "Total coding challenges",
     },
     {
-      title: "Total Users",
-      value: stats?.totalUsers,
+      title: "Total Community",
+      value: stats?.totalUsers || 0,
       icon: Users,
-      accent: "text-emerald-400",
+      color: "emerald",
+      description: "Registered developers",
     },
     {
-      title: "Total Submissions",
-      value: stats?.totalSubmissions,
+      title: "Solutions Sent",
+      value: stats?.totalSubmissions || 0,
       icon: Send,
-      accent: "text-purple-400",
+      color: "purple",
+      description: "Total code submissions",
     },
     {
-      title: "Accepted Solutions",
-      value: stats?.totalAccepted,
+      title: "Succesful Runs",
+      value: stats?.totalAccepted || 0,
       icon: CheckCircle,
-      accent: "text-green-400",
+      color: "teal",
+      description: "Code passing all tests",
     },
     {
-      title: "Admins",
-      value: stats?.totalAdmins,
+      title: "Active Admins",
+      value: stats?.totalAdmins || 0,
       icon: Shield,
-      accent: "text-orange-400",
+      color: "orange",
+      description: "System administrators",
     },
     {
-      title: "Banned Users",
-      value: stats?.totalBannedUsers,
+      title: "Restricted Access",
+      value: stats?.totalBannedUsers || 0,
       icon: Ban,
-      accent: "text-red-400",
+      color: "rose",
+      description: "Permanently banned",
     },
   ];
 
   if (loading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {[...Array(6)].map((_, i) => (
           <div
             key={i}
-            className="h-28 rounded-xl bg-slate-900 border border-slate-800 animate-pulse"
+            className="h-44 rounded-[2.5rem] bg-slate-900/50 border border-white/5 animate-pulse"
           />
         ))}
       </div>
     );
   }
 
-  if (error) {
-    return (
-      <div className="bg-yellow-900 border border-yellow-800 rounded-lg p-4">
-        <div className="flex items-center">
-          <div className="shrink-0">
-            <svg className="h-5 w-5 text-yellow-300" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-            </svg>
-          </div>
-          <div className="ml-3">
-            <h3 className="text-sm font-medium text-yellow-200">Using demo data</h3>
-            <p className="text-sm text-yellow-300 mt-1">
-              {error} - Showing sample statistics for demonstration.
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className={`grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6` }>
-      {cards.map((card) => (
-        <div
-          key={card.title}
-          className="
-            relative overflow-hidden
-            rounded-xl border border-slate-800 bg-slate-900
-            p-6 transition-all duration-200
-            hover:border-slate-700 hover:-translate-y-0.5
-          "
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-slate-400">{card.title}</p>
-              <p className="mt-1 text-3xl font-bold text-slate-100">
-                {card.value?.toLocaleString()}
-              </p>
-            </div>
-
-            <div className="rounded-lg bg-slate-800 p-3">
-              <card.icon className={`h-6 w-6 ${card.accent}`} />
-            </div>
-          </div>
-
-          {/* subtle bottom divider */}
-          <div className="absolute inset-x-0 bottom-0 h-px bg-linear-to-r from-transparent via-slate-700 to-transparent" />
-        </div>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      {cards.map((card, index) => (
+        <StatCard key={card.title} card={card} index={index} />
       ))}
     </div>
   );
 };
+
+function StatCard({ card, index }: { card: any; index: number }) {
+  const colors: any = {
+    indigo: "from-indigo-500/20 to-indigo-500/5 border-indigo-500/20 text-indigo-400",
+    emerald: "from-emerald-500/20 to-emerald-500/5 border-emerald-500/20 text-emerald-400",
+    purple: "from-purple-500/20 to-purple-500/5 border-purple-500/20 text-purple-400",
+    teal: "from-teal-500/20 to-teal-500/5 border-teal-500/20 text-teal-400",
+    orange: "from-orange-500/20 to-orange-500/5 border-orange-500/20 text-orange-400",
+    rose: "from-rose-500/20 to-rose-500/5 border-rose-500/20 text-rose-400",
+  };
+
+  const Icon = card.icon;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.5, delay: index * 0.1 }}
+      className={`relative group bg-slate-900/40 backdrop-blur-xl border border-white/10 rounded-[2.5rem] p-8 shadow-2xl hover:shadow-${card.color}-500/10 transition-all duration-500 overflow-hidden`}
+    >
+      {/* Background Glow */}
+      <div className={`absolute -right-10 -top-10 w-40 h-40 rounded-full bg-gradient-to-br ${colors[card.color]} blur-3xl opacity-20 group-hover:opacity-40 transition-opacity duration-700`} />
+
+      <div className="relative z-10 flex flex-col justify-between h-full">
+        <div className="flex items-center justify-between mb-6">
+          <div className={`p-4 rounded-2xl bg-white/5 border border-white/5 group-hover:bg-white/10 transition-colors`}>
+            <Icon className={`h-7 w-7 ${card.color === 'indigo' ? 'text-indigo-400' : card.color === 'emerald' ? 'text-emerald-400' : card.color === 'purple' ? 'text-purple-400' : card.color === 'teal' ? 'text-teal-400' : card.color === 'orange' ? 'text-orange-400' : 'text-rose-400'}`} />
+          </div>
+          <div className="p-2 rounded-xl bg-white/5 border border-white/5 text-slate-500 group-hover:text-white transition-colors cursor-pointer">
+            <ArrowUpRight className="h-4 w-4" />
+          </div>
+        </div>
+
+        <div>
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-2">{card.title}</p>
+          <div className="flex items-baseline gap-2">
+            <span className="text-4xl font-black text-white tracking-tighter">
+              <AnimatedCounter to={card.value} />
+            </span>
+            <span className="text-emerald-500 text-xs font-black uppercase tracking-widest">+12.5%</span>
+          </div>
+          <p className="mt-3 text-[11px] font-bold text-slate-500 group-hover:text-slate-400 transition-colors uppercase tracking-widest leading-none">
+            {card.description}
+          </p>
+        </div>
+      </div>
+
+      {/* Decorative Line */}
+      <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+    </motion.div>
+  );
+}
 
 export default StatsCards;

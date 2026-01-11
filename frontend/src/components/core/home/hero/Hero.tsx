@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 
 export default function Hero() {
   return (
-    <section className="relative min-h-[calc(100vh-4rem)] flex items-center justify-center bg-gray-950 text-gray-100 overflow-hidden">
+    <section className="relative h-screen flex items-center justify-center bg-gray-950 text-gray-100 overflow-hidden pt-24">
       {/* Background Elements */}
       <DotBackground />
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-gray-950/50 to-gray-950 pointer-events-none" />

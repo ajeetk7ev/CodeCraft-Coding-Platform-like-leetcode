@@ -20,30 +20,30 @@ const AdminDashboard = () => {
   }, []);
 
   return (
-    <>  
-    <Navbar/>
-     <div className="flex min-h-screen bg-slate-950 text-slate-100 pt-5">
-      {/* Navbar */}
-    
-      {/* Sidebar */}
-      <div className="lg:fixed lg:inset-y-0 lg:left-0">
-        <Sidebar />
+    <>
+      <Navbar />
+      <div className="flex min-h-screen bg-slate-950 text-slate-100 pt-24">
+        {/* Navbar */}
+
+        {/* Sidebar */}
+        <div className="lg:fixed lg:inset-y-0 lg:left-0">
+          <Sidebar />
+        </div>
+
+        {/* Main content */}
+        <main
+          className="flex-1 overflow-y-auto p-6 transition-all duration-300"
+          style={{
+            marginLeft: isDesktop ? (collapsed ? "5.25rem" : "17.5rem") : "0",
+          }}
+        >
+          <Outlet />
+        </main>
       </div>
 
-      {/* Main content */}
-      <main
-        className="flex-1 overflow-y-auto p-6 transition-all duration-300"
-        style={{
-          marginLeft: isDesktop ? (collapsed ? "5rem" : "16rem") : "0",
-        }}
-      >
-        <Outlet />
-      </main>
-    </div>
 
-    
     </>
-   
+
   );
 };
 

@@ -145,7 +145,7 @@ export default function Problems() {
 
   /* ---------------- RENDER ---------------- */
   return (
-    <div className="bg-gray-950 min-h-screen text-gray-100 font-sans selection:bg-indigo-500/30">
+    <div className="bg-gray-950 min-h-screen text-gray-100 font-sans selection:bg-indigo-500/30 pt-20">
       <Navbar />
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12">

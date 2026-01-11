@@ -5,13 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import FormError from "@/components/common/FormError";
 import { useAuthStore } from "@/stores/authStore";
-import { ArrowLeft, Eye, EyeOff, LoaderCircle } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff, LoaderCircle, User, Mail, Lock, AtSign, ArrowRight } from "lucide-react";
 import toast from "react-hot-toast";
 import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 
 export const inputClass =
-  "bg-gray-900 text-gray-300 placeholder:text-gray-500 border-gray-700 focus:border-indigo-500 focus:ring-indigo-500";
+  "bg-slate-950/50 border-slate-800 focus:border-indigo-500 focus:ring-1 ring-indigo-500 text-slate-100 placeholder:text-slate-600 h-12 rounded-xl transition-all duration-300";
 
 type SignupErrors = {
   fullName?: string;
@@ -71,108 +72,152 @@ export default function Signup() {
       }
     } else {
       toast.success(res.message || "Signup Successfully");
-      setForm({fullName:"", username:"", email:"", password:""});
+      setForm({ fullName: "", username: "", email: "", password: "" });
       navigate("/");
     }
   }
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+        delayChildren: 0.5
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: { y: 0, opacity: 1 }
+  };
+
   return (
     <AuthLayout>
-      <button
+      <motion.button
+        initial={{ x: -20, opacity: 0 }}
+        animate={{ x: 0, opacity: 1 }}
+        transition={{ delay: 0.6 }}
         onClick={() => navigate(-1)}
-        className="self-start w-8 h-8  justify-center  bg-gray-600 rounded-full  text-gray-300 hover:text-gray-100 flex items-center gap-2"
+        className="absolute top-8 left-8 p-2 rounded-xl bg-slate-800/50 text-slate-400 hover:text-white hover:bg-slate-700 transition-all group"
       >
-        <ArrowLeft className="h-5 w-5" />
-      </button>
+        <ArrowLeft className="h-5 w-5 group-hover:-translate-x-1 transition-transform" />
+      </motion.button>
+
       <AuthHeader
-        title="Create your account"
-        subtitle="Start solving problems and track your progress"
+        title="Create Account"
+        subtitle="Join our global community of expert coders"
       />
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <Input
-            name="fullName"
-            placeholder="Full Name"
-            value={form.fullName}
-            onChange={handleChange}
-            className={inputClass}
-          />
-          <FormError message={errors.fullName} />
-        </div>
-
-        <div>
-          <Input
-            name="username"
-            placeholder="Username"
-            value={form.username}
-            onChange={handleChange}
-            className={inputClass}
-          />
-          <FormError message={errors.username} />
-        </div>
-
-        <div>
-          <Input
-            type="email"
-            name="email"
-            placeholder="Email address"
-            value={form.email}
-            onChange={handleChange}
-            className={inputClass}
-          />
-          <FormError message={errors.email} />
-        </div>
-
-        <div>
+      <motion.form
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        onSubmit={handleSubmit}
+        className="space-y-5"
+      >
+        <motion.div variants={itemVariants} className="space-y-1">
           <div className="relative">
+            <User className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-600" />
+            <Input
+              name="fullName"
+              placeholder="Full Name"
+              value={form.fullName}
+              onChange={handleChange}
+              className={`${inputClass} pl-12`}
+            />
+          </div>
+          <FormError message={errors.fullName} />
+        </motion.div>
+
+        <motion.div variants={itemVariants} className="space-y-1">
+          <div className="relative">
+            <AtSign className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-600" />
+            <Input
+              name="username"
+              placeholder="Username"
+              value={form.username}
+              onChange={handleChange}
+              className={`${inputClass} pl-12`}
+            />
+          </div>
+          <FormError message={errors.username} />
+        </motion.div>
+
+        <motion.div variants={itemVariants} className="space-y-1">
+          <div className="relative">
+            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-600" />
+            <Input
+              type="email"
+              name="email"
+              placeholder="Email address"
+              value={form.email}
+              onChange={handleChange}
+              className={`${inputClass} pl-12`}
+            />
+          </div>
+          <FormError message={errors.email} />
+        </motion.div>
+
+        <motion.div variants={itemVariants} className="space-y-1">
+          <div className="relative">
+            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-600" />
             <Input
               type={showPassword ? "text" : "password"}
               name="password"
               placeholder="Password"
               value={form.password}
               onChange={handleChange}
-              className={`${inputClass} pr-10`}
+              className={`${inputClass} pl-12 pr-12`}
             />
 
             <button
               type="button"
               onClick={() => setShowPassword((prev) => !prev)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200"
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-indigo-400 transition-colors"
             >
               {showPassword ? (
-                <EyeOff className="h-4 w-4" />
+                <EyeOff className="h-5 w-5" />
               ) : (
-                <Eye className="h-4 w-4" />
+                <Eye className="h-5 w-5" />
               )}
             </button>
           </div>
-
           <FormError message={errors.password} />
-        </div>
+        </motion.div>
 
-        <Button
-          disabled={authIsLoading}
-          className="w-full bg-indigo-600 hover:bg-indigo-700 flex items-center justify-center gap-2"
-        >
-          {authIsLoading ? (
-            <>
-              <LoaderCircle className="h-4 w-4 animate-spin" />
-              Creating account...
-            </>
-          ) : (
-            "Create Account"
-          )}
-        </Button>
-      </form>
-      <p className="text-sm text-gray-400 mt-6 text-center">
-        {" "}
+        <motion.div variants={itemVariants}>
+          <Button
+            disabled={authIsLoading}
+            className="w-full h-12 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl shadow-lg shadow-indigo-600/20 active:scale-95 transition-all flex items-center justify-center gap-2 group mt-2"
+          >
+            {authIsLoading ? (
+              <>
+                <LoaderCircle className="h-5 w-5 animate-spin" />
+                Processing...
+              </>
+            ) : (
+              <>
+                Sign Up
+                <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
+              </>
+            )}
+          </Button>
+        </motion.div>
+      </motion.form>
+
+      <motion.p
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 1.2 }}
+        className="text-sm text-slate-500 mt-8 text-center"
+      >
         Already have an account?{" "}
-        <Link to={"/login"} className="text-indigo-400 hover:underline">
-          {" "}
-          Log in{" "}
-        </Link>{" "}
-      </p>
+        <Link to="/login" className="text-indigo-400 font-bold hover:text-indigo-300 transition-colors">
+          Sign in
+        </Link>
+      </motion.p>
     </AuthLayout>
   );
 }
