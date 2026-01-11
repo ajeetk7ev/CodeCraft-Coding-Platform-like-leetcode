@@ -1,21 +1,25 @@
-FROM node:18-alpine
+# --- Build Stage ---
+FROM node:18-alpine AS builder
 
 WORKDIR /app
 
-
 COPY package*.json ./
-
-
 RUN npm install
 
-
-COPY tsconfig.json ./
-COPY src ./src
-
-
+COPY . .
 RUN npm run build
 
-EXPOSE 3000
+# --- Production Stage ---
+FROM node:18-alpine AS runner
 
+WORKDIR /app
+
+COPY --from=builder /app/package*.json ./
+RUN npm install --omit=dev
+
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/uploads ./uploads
+
+EXPOSE 3000
 
 CMD ["node", "dist/server.js"]
