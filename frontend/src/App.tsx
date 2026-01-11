@@ -14,6 +14,8 @@ import Analytics from "./pages/admin/Analytics";
 import Users from "./pages/admin/Users";
 import Settings from "./pages/admin/Settings";
 import Leaderboard from "./pages/Leaderboard";
+import Contests from "./pages/Contests";
+import Discuss from "./pages/Discuss";
 import { useAuthStore } from "./stores/authStore";
 import ProtectedRoute from "./components/routing/ProtectedRoute";
 import PublicRoute from "./components/routing/PublicRoute";
@@ -32,6 +34,8 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/problems" element={<Problems />} />
         <Route path="/problems/:slug" element={<ProblemView />} />
+        <Route path="/contests" element={<Contests />} />
+        <Route path="/discuss" element={<Discuss />} />
         <Route path="/leaderboard" element={<Leaderboard />} />
 
         {/* Auth Routes - Only accessible when NOT logged in */}
