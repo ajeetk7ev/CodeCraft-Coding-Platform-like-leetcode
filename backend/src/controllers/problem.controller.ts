@@ -11,8 +11,8 @@ import { Preferences } from "../models/user/Preferences";
 import { createProblemSchema, updateProblemSchema } from "../validations/problem.schema";
 import Submission from "../models/submission/Submission";
 import { Verdict } from "../models/submission/verdict";
-import { redis } from "../config/redis";
-import { clearCache } from "../utils/cache.utils";
+
+import mongoose from "mongoose";
 
 // Helper function to generate slug from title
 const generateSlug = (title: string): string => {
@@ -120,7 +120,6 @@ export const createProblem = async (req: Request, res: Response) => {
       );
     }
 
-
     // Create problem testcases
     if (testcases && testcases.length > 0) {
       await ProblemTestcase.insertMany(
@@ -140,7 +139,7 @@ export const createProblem = async (req: Request, res: Response) => {
           problem: problem._id,
           language: boilerplate.language,
           userCodeTemplate: boilerplate.userCodeTemplate,
-          fullCodeTemplate: boilerplate.fullCodeTemplate
+          fullCodeTemplate: boilerplate.fullCodeTemplate,
         }))
       );
     }
@@ -175,9 +174,7 @@ export const createProblem = async (req: Request, res: Response) => {
     // Fetch the complete problem with all related data
     const completeProblem = await getCompleteProblemData(problem._id);
 
-    // Clear problem list caches
-    // Clear problem list caches
-    await clearCache("problem:list:*");
+
 
     return res.status(201).json({
       success: true,
@@ -187,7 +184,6 @@ export const createProblem = async (req: Request, res: Response) => {
   } catch (error: any) {
     console.log("Error in createProblem", error);
 
-    // Handle duplicate key error
     if (error.code === 11000) {
       return res.status(400).json({
         success: false,
@@ -202,66 +198,37 @@ export const createProblem = async (req: Request, res: Response) => {
   }
 };
 
+
 // READ - Get all problems with optional filtering
 export const getProblems = async (req: Request, res: Response) => {
   try {
     const { difficulty, page = 1, limit = 10, search, tags, companies, status } = req.query;
 
-    // Cache key based on query params (excluding user-specific status for now)
-    // Actually, status depends on user, so it's not cacheable globally if status is used.
-    // If status is used, we skip cache or cache per user? 
-    // Let's cache the BASE results and handle user-specific enrichment after.
-    const queryKey = `problem:list:${JSON.stringify({ difficulty, page, limit, search, tags, companies })}`;
 
-    // We only use cache if status filter is NOT present, because status is user-dependent
-    let cachedData = null;
-    if (!status) {
-      cachedData = await redis.get(queryKey);
-    }
-
-    if (cachedData) {
-      console.log("Using cached data");
-      const { enrichedProblems, total, pageNum, limitNum } = JSON.parse(cachedData);
-
-      // Still need to handle user-specific solved status even if from cache
-      const userId = (req as any).user?._id;
-      let solvedProblemIds: string[] = [];
-      if (userId) {
-        const solvedSubmissions = await Submission.find({
-          user: userId,
-          verdict: Verdict.ACCEPTED
-        }).distinct("problem");
-        solvedProblemIds = solvedSubmissions.map(id => id.toString());
-      }
-
-      const finalProblems = enrichedProblems.map((p: any) => ({
-        ...p,
-        isSolved: solvedProblemIds.includes(p._id.toString())
-      }));
-
-      return res.json({
-        success: true,
-        data: finalProblems,
-        pagination: {
-          page: pageNum,
-          limit: limitNum,
-          total,
-          pages: Math.ceil(total / limitNum),
-        },
-      });
-    }
 
     const pageNum = parseInt(page as string, 10);
     const limitNum = parseInt(limit as string, 10);
     const skip = (pageNum - 1) * limitNum;
 
+    // ---------------- Solved logic ----------------
+    const userId = (req as any).user?._id;
+    let solvedProblemIds: string[] = [];
+
+    if (userId) {
+      const solved = await Submission.find({
+        user: userId,
+        verdict: Verdict.ACCEPTED,
+      }).distinct("problem");
+
+      solvedProblemIds = solved.map(id => id.toString());
+    }
+
     // Build query
-    const query: any = {};
+    const query: any = { published: true };
+
     if (difficulty && ["easy", "medium", "hard"].includes(difficulty as string)) {
       query.difficulty = difficulty;
     }
-
-    query.published = true; // Ensure only published problems are shown
 
     if (search) {
       query.$or = [
@@ -270,98 +237,16 @@ export const getProblems = async (req: Request, res: Response) => {
       ];
     }
 
-    // Filter by Tags (Intersection: Problem must have ALL selected tags)
-    if (tags) {
-      const tagList = (tags as string).split(",").map(t => t.trim()).filter(Boolean);
-      if (tagList.length > 0) {
-        // Find problems that have these tags
-        const matchedTagProblems = await ProblemTag.aggregate([
-          { $match: { tag: { $in: tagList } } },
-          { $group: { _id: "$problem", matchedCount: { $sum: 1 } } },
-          { $match: { matchedCount: tagList.length } } // Ensure all tags match
-        ]);
-        const problemIds = matchedTagProblems.map(p => p._id);
-
-        // If we already have criteria (like search), we need to intersect
-        if (query._id) {
-          query._id = { $in: query._id["$in"].filter((id: any) => problemIds.some((pid: any) => pid.equals(id))) };
-        } else {
-          query._id = { $in: problemIds };
-        }
+    // Validate and Apply Status Filter
+    if (status) {
+      if (status === "solved" && userId) {
+        query._id = { $in: solvedProblemIds };
+      } else if (status === "unsolved" && userId) {
+        query._id = { $nin: solvedProblemIds };
       }
     }
 
-    // Filter by Companies (Union: Problem matches ANY selected company - standard behavior usually, let's do Union for companies)
-    // Actually typically filtering is intersection for tags, but union for companies is common too.
-    // Let's stick to Intersection for consistency if multi-select, OR Union if that's more intuitive.
-    // Let's do Union for companies (any of the selected companies).
-    if (companies) {
-      const companyList = (companies as string).split(",").map(c => c.trim()).filter(Boolean);
-      if (companyList.length > 0) {
-        const matchedCompanyProblems = await ProblemCompanyTag.find({
-          company: { $in: companyList }
-        }).distinct("problem");
-
-        // Intersect with existing ID filter if any
-        if (query._id) {
-          // query._id might be { $in: [...] }
-          if (query._id["$in"]) {
-            const existingIds = query._id["$in"];
-            // Intersection of strings/objectIds is tricky, helper needed?
-            // Mongoose handles ObjectId vs String usually well in $in
-            query._id = { $in: existingIds.filter((id: any) => matchedCompanyProblems.some((pid: any) => pid.toString() === id.toString())) };
-          } else {
-            query._id = { $in: matchedCompanyProblems };
-          }
-        } else {
-          query._id = { $in: matchedCompanyProblems };
-        }
-      }
-    }
-
-    // Solved Status Logic
-    let solvedProblemIds: string[] = [];
-    const userId = (req as any).user?._id;
-
-    // Fetch solved problems if user is logged in
-    if (userId) {
-      const solvedSubmissions = await Submission.find({
-        user: userId,
-        verdict: Verdict.ACCEPTED
-      }).distinct("problem");
-      solvedProblemIds = solvedSubmissions.map(id => id.toString());
-    }
-
-    // Filter by Status (Solved/Unsolved)
-    if (status && userId) {
-      if (status === "solved") {
-        // Must be in solvedProblemIds
-        if (query._id) {
-          if (query._id["$in"]) {
-            const existingIds = query._id["$in"];
-            query._id = { $in: existingIds.filter((id: any) => solvedProblemIds.includes(id.toString())) };
-          } else {
-            query._id = { $in: solvedProblemIds };
-          }
-        } else {
-          query._id = { $in: solvedProblemIds };
-        }
-      } else if (status === "unsolved") {
-        // Must NOT be in solvedProblemIds
-        if (query._id) {
-          if (query._id["$in"]) {
-            const existingIds = query._id["$in"];
-            query._id = { $in: existingIds.filter((id: any) => !solvedProblemIds.includes(id.toString())) };
-          } else {
-            query._id = { $nin: solvedProblemIds };
-          }
-        } else {
-          query._id = { $nin: solvedProblemIds };
-        }
-      }
-    }
-
-    // Get problems with pagination
+    // ---------------- Fetch problems ----------------
     const problems = await Problem.find(query)
       .select("-__v")
       .populate("createdBy", "username email")
@@ -369,52 +254,49 @@ export const getProblems = async (req: Request, res: Response) => {
       .skip(skip)
       .limit(limitNum);
 
-    // Fetch tags and companies for the fetched problems to display in UI
+
     const problemIds = problems.map(p => p._id);
 
-    // Parallel fetch for efficiency
     const [allTags, allCompanies] = await Promise.all([
       ProblemTag.find({ problem: { $in: problemIds } }),
-      ProblemCompanyTag.find({ problem: { $in: problemIds } })
+      ProblemCompanyTag.find({ problem: { $in: problemIds } }),
     ]);
 
-    // Attach metadata to problems
-    // We need to return a slightly richer object than the Mongoose document
     const enrichedProblems = problems.map(problem => {
       const p: any = problem.toObject();
       return {
         ...p,
-        tags: allTags.filter(t => t.problem.toString() === p._id.toString()).map(t => t.tag),
-        companies: allCompanies.filter(c => c.problem.toString() === p._id.toString()).map(c => c.company),
-        isSolved: solvedProblemIds.includes(p._id.toString())
+        tags: allTags
+          .filter(t => t.problem.toString() === p._id.toString())
+          .map(t => t.tag),
+        companies: allCompanies
+          .filter(c => c.problem.toString() === p._id.toString())
+          .map(c => c.company),
+        isSolved: solvedProblemIds.includes(p._id.toString()),
       };
     });
 
-    // Get total count
     const total = await Problem.countDocuments(query);
 
-    // Cache the results (without solved status) for 10 minutes
-    if (!status) {
-      await redis.set(queryKey, JSON.stringify({
-        enrichedProblems: enrichedProblems.map(p => ({ ...p, isSolved: false })),
-        total,
-        pageNum,
-        limitNum
-      }), "EX", 600);
-    }
+    // ✅ DEFINE PAGINATION OBJECT (FIX)
+    const pagination = {
+      page: pageNum,
+      limit: limitNum,
+      total,
+      pages: Math.ceil(total / limitNum),
+    };
+
+    console.log("🚀 ~ getProblems ~ enrichedProblems:", enrichedProblems)
+
+
 
     return res.json({
       success: true,
       data: enrichedProblems,
-      pagination: {
-        page: pageNum,
-        limit: limitNum,
-        total,
-        pages: Math.ceil(total / limitNum),
-      },
+      pagination,
     });
   } catch (error) {
-    console.log("Error in getProblems", error);
+    console.error("Error in getProblems", error);
     return res.status(500).json({
       success: false,
       message: "Server error",
@@ -505,29 +387,11 @@ export const getProblem = async (req: Request, res: Response) => {
     const { slug } = req.params;
     const user = (req as any).user;
 
-    const CACHE_KEY = `problem:slug:${slug}`;
-    const cachedProblem = await redis.get(CACHE_KEY);
 
-    if (cachedProblem) {
-      const problemData = JSON.parse(cachedProblem);
 
-      // Still need to check if THIS specific user solved it
-      const solvedStatus = await Submission.findOne({
-        user: user._id,
-        problem: problemData._id,
-        verdict: Verdict.ACCEPTED
-      });
-
-      return res.json({
-        success: true,
-        data: {
-          ...problemData,
-          isSolved: !!solvedStatus
-        },
-      });
-    }
-
-    const problem = await Problem.findOne({ slug }).select("-__v -createdAt -updatedAt -createdBy");
+    // ================= DB FETCH =================
+    const problem = await Problem.findOne({ slug })
+      .select("-__v -createdAt -updatedAt -createdBy");
 
     if (!problem) {
       return res.status(404).json({
@@ -539,29 +403,39 @@ export const getProblem = async (req: Request, res: Response) => {
     const [
       description,
       examples,
-      testcases, // ✅ already filtered
+      testcases,
       boilerplates,
       tags,
       companyTags,
       preferences,
-      solvedStatus
+      solvedStatus,
     ] = await Promise.all([
       ProblemDescription.findOne({ problem: problem._id }).select("-__v"),
-      ProblemExample.find({ problem: problem._id }).select("-__v -problem -createdAt -updatedAt"),
-
-      // ✅ ONLY visible testcases
+      ProblemExample.find({ problem: problem._id }).select(
+        "-__v -problem -createdAt -updatedAt"
+      ),
       ProblemTestcase.find({
         problem: problem._id,
         isHidden: false,
       }).select("-__v -problem -createdAt -updatedAt -isHidden"),
-
-      ProblemBoilerplate.find({ problem: problem._id }).select("-__v -problem -fullCodeTemplate -createdAt -updatedAt"),
+      ProblemBoilerplate.find({ problem: problem._id }).select(
+        "-__v -problem -fullCodeTemplate -createdAt -updatedAt"
+      ),
       ProblemTag.find({ problem: problem._id }).select("-__v -problem"),
       ProblemCompanyTag.find({ problem: problem._id }).select("-__v -problem"),
-      Preferences.findOne({ user: user._id }).select("-__v -user -createdAt -updatedAt"),
-      Submission.findOne({ user: user._id, problem: problem._id, verdict: Verdict.ACCEPTED })
+      user?._id
+        ? Preferences.findOne({ user: user._id }).select(
+          "-__v -user -createdAt -updatedAt"
+        )
+        : null,
+      user?._id
+        ? Submission.findOne({
+          user: user._id,
+          problem: problem._id,
+          verdict: Verdict.ACCEPTED,
+        })
+        : null,
     ]);
-
 
     const result = {
       ...problem.toObject(),
@@ -570,21 +444,20 @@ export const getProblem = async (req: Request, res: Response) => {
       examples: examples || [],
       testcases: testcases || [],
       boilerplates: boilerplates || [],
-      tags: tags.map((t) => t.tag),
-      companyTags: companyTags.map((ct) => ct.company),
+      tags: tags.map(t => t.tag),
+      companyTags: companyTags.map(ct => ct.company),
       preferences,
-      isSolved: !!solvedStatus
+      isSolved: !!solvedStatus,
     };
 
-    // Cache for 10 minutes (masking isSolved as it's user-specific)
-    await redis.set(CACHE_KEY, JSON.stringify({ ...result, isSolved: false }), "EX", 600);
+
 
     return res.json({
       success: true,
       data: result,
     });
   } catch (error) {
-    console.error("Error in getProblem", error);
+    console.error("❌ Error in getProblem", error);
     return res.status(500).json({
       success: false,
       message: "Server error",
@@ -593,12 +466,16 @@ export const getProblem = async (req: Request, res: Response) => {
 };
 
 
+
 // UPDATE - Update a problem and all related data
 export const updateProblem = async (req: Request, res: Response) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   try {
     const { id } = req.params;
-    const parsed = updateProblemSchema.safeParse(req.body);
 
+    const parsed = updateProblemSchema.safeParse(req.body);
     if (!parsed.success) {
       return res.status(400).json({
         success: false,
@@ -608,143 +485,165 @@ export const updateProblem = async (req: Request, res: Response) => {
 
     const updateData = parsed.data;
 
-    // Check if problem exists
-    const existingProblem = await Problem.findById(id);
+    // ================= FIND PROBLEM =================
+    const existingProblem = await Problem.findById(id).session(session);
     if (!existingProblem) {
+      await session.abortTransaction();
       return res.status(404).json({
         success: false,
         message: "Problem not found",
       });
     }
 
-    // Prepare basic problem update data
-    const problemUpdateData: any = {};
-    if (updateData.title) problemUpdateData.title = updateData.title;
-    if (updateData.difficulty) problemUpdateData.difficulty = updateData.difficulty;
+    // ================= BASIC UPDATE =================
+    const problemUpdate: any = {};
 
-    // Handle slug update
+    if (updateData.title) problemUpdate.title = updateData.title;
+    if (updateData.difficulty) problemUpdate.difficulty = updateData.difficulty;
+
+    // ================= SLUG HANDLING =================
     if (updateData.slug) {
-      const slugConflict = await Problem.findOne({
+      const conflict = await Problem.exists({
         slug: updateData.slug,
         _id: { $ne: id },
       });
-      if (slugConflict) {
+
+      if (conflict) {
+        await session.abortTransaction();
         return res.status(400).json({
           success: false,
           message: "A problem with this slug already exists",
         });
       }
-      problemUpdateData.slug = updateData.slug;
+
+      problemUpdate.slug = updateData.slug;
     } else if (updateData.title) {
-      // Generate slug from title if title is updated but slug is not
-      const newSlug = generateSlug(updateData.title);
-      const slugConflict = await Problem.findOne({
-        slug: newSlug,
+      const generatedSlug = generateSlug(updateData.title);
+      const conflict = await Problem.exists({
+        slug: generatedSlug,
         _id: { $ne: id },
       });
-      problemUpdateData.slug = slugConflict
-        ? `${newSlug}-${Date.now()}`
-        : newSlug;
+
+      problemUpdate.slug = conflict
+        ? `${generatedSlug}-${Date.now()}`
+        : generatedSlug;
     }
 
-    // Update main problem
-    if (Object.keys(problemUpdateData).length > 0) {
-      await Problem.findByIdAndUpdate(id, { $set: problemUpdateData }, { runValidators: true });
-    }
-
-    // Update description and constraints
-    if (updateData.description !== undefined || updateData.constraints !== undefined) {
-      const descriptionData: any = {};
-      if (updateData.description !== undefined) descriptionData.description = updateData.description;
-      if (updateData.constraints !== undefined) descriptionData.constraints = updateData.constraints;
-
-      await ProblemDescription.findOneAndUpdate(
-        { problem: id },
-        { $set: descriptionData },
-        { upsert: true, runValidators: true }
+    if (Object.keys(problemUpdate).length) {
+      await Problem.updateOne(
+        { _id: id },
+        { $set: problemUpdate },
+        { runValidators: true, session }
       );
     }
 
-    // Update examples (replace all)
+    // ================= DESCRIPTION =================
+    if (
+      updateData.description !== undefined ||
+      updateData.constraints !== undefined
+    ) {
+      await ProblemDescription.findOneAndUpdate(
+        { problem: id },
+        {
+          $set: {
+            ...(updateData.description !== undefined && {
+              description: updateData.description,
+            }),
+            ...(updateData.constraints !== undefined && {
+              constraints: updateData.constraints,
+            }),
+          },
+        },
+        { upsert: true, runValidators: true, session }
+      );
+    }
+
+    // ================= EXAMPLES =================
     if (updateData.examples !== undefined) {
-      await ProblemExample.deleteMany({ problem: id });
-      if (updateData.examples.length > 0) {
+      await ProblemExample.deleteMany({ problem: id }, { session });
+
+      if (updateData.examples.length) {
         await ProblemExample.insertMany(
-          updateData.examples.map((example) => ({
+          updateData.examples.map(e => ({
             problem: id,
-            input: example.input,
-            output: example.output,
-            explanation: example.explanation,
-          }))
+            input: e.input,
+            output: e.output,
+            explanation: e.explanation,
+          })),
+          { session }
         );
       }
     }
 
-    // Update testcases (replace all)
+    // ================= TESTCASES =================
     if (updateData.testcases !== undefined) {
-      await ProblemTestcase.deleteMany({ problem: id });
-      if (updateData.testcases.length > 0) {
+      await ProblemTestcase.deleteMany({ problem: id }, { session });
+
+      if (updateData.testcases.length) {
         await ProblemTestcase.insertMany(
-          updateData.testcases.map((testcase) => ({
+          updateData.testcases.map(t => ({
             problem: id,
-            input: testcase.input,
-            output: testcase.output,
-            isHidden: testcase.isHidden,
-          }))
+            input: t.input,
+            output: t.output,
+            isHidden: t.isHidden,
+          })),
+          { session }
         );
       }
     }
 
-    // Update boilerplates (replace all)
+    // ================= BOILERPLATES =================
     if (updateData.boilerplates !== undefined) {
-      await ProblemBoilerplate.deleteMany({ problem: id });
-      if (updateData.boilerplates.length > 0) {
+      await ProblemBoilerplate.deleteMany({ problem: id }, { session });
+
+      if (updateData.boilerplates.length) {
         await ProblemBoilerplate.insertMany(
-          updateData.boilerplates.map((boilerplate) => ({
+          updateData.boilerplates.map(b => ({
             problem: id,
-            language: boilerplate.language,
-            userCodeTemplate: boilerplate.userCodeTemplate,
-            fullCodeTemplate: boilerplate.fullCodeTemplate
-          }))
+            language: b.language,
+            userCodeTemplate: b.userCodeTemplate,
+            fullCodeTemplate: b.fullCodeTemplate,
+          })),
+          { session }
         );
       }
     }
 
-    // Update tags (replace all)
+    // ================= TAGS =================
     if (updateData.tags !== undefined) {
-      await ProblemTag.deleteMany({ problem: id });
-      if (updateData.tags.length > 0) {
+      await ProblemTag.deleteMany({ problem: id }, { session });
+
+      if (updateData.tags.length) {
         await ProblemTag.insertMany(
-          updateData.tags.map((tag) => ({
-            problem: id,
-            tag,
-          }))
+          updateData.tags.map(tag => ({ problem: id, tag })),
+          { session }
         );
       }
     }
 
-    // Update company tags (replace all)
+    // ================= COMPANY TAGS =================
     if (updateData.companyTags !== undefined) {
-      await ProblemCompanyTag.deleteMany({ problem: id });
-      if (updateData.companyTags.length > 0) {
+      await ProblemCompanyTag.deleteMany({ problem: id }, { session });
+
+      if (updateData.companyTags.length) {
         await ProblemCompanyTag.insertMany(
-          updateData.companyTags.map((company) => ({
+          updateData.companyTags.map(company => ({
             problem: id,
             company,
-          }))
+          })),
+          { session }
         );
       }
     }
 
-    // Fetch the complete updated problem
-    const completeProblem = await getCompleteProblemData(id);
+    // ================= COMMIT =================
+    await session.commitTransaction();
+    session.endSession();
 
-    // Clear relevant caches
-    await redis.del(`problem:slug:${existingProblem.slug}`);
-    if (updateData.slug && updateData.slug !== existingProblem.slug) {
-      await redis.del(`problem:slug:${updateData.slug}`);
-    }
-    await clearCache("problem:list:*");
+
+
+    // ================= RESPONSE =================
+    const completeProblem = await getCompleteProblemData(id);
 
     return res.json({
       success: true,
@@ -752,9 +651,11 @@ export const updateProblem = async (req: Request, res: Response) => {
       data: completeProblem,
     });
   } catch (error: any) {
-    console.log("Error in updateProblem", error);
+    await session.abortTransaction();
+    session.endSession();
 
-    // Handle duplicate key error
+    console.error("❌ Error in updateProblem", error);
+
     if (error.code === 11000) {
       return res.status(400).json({
         success: false,
@@ -769,46 +670,59 @@ export const updateProblem = async (req: Request, res: Response) => {
   }
 };
 
+
 // DELETE - Delete a problem and all related data
 export const deleteProblem = async (req: Request, res: Response) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   try {
     const { id } = req.params;
 
-    const problem = await Problem.findById(id);
+    // ================= FIND PROBLEM =================
+    const problem = await Problem.findById(id).session(session);
 
     if (!problem) {
+      await session.abortTransaction();
       return res.status(404).json({
         success: false,
         message: "Problem not found",
       });
     }
 
-    // Delete all related data
+    // ================= DELETE EVERYTHING =================
     await Promise.all([
-      Problem.findByIdAndDelete(id),
-      ProblemDescription.deleteMany({ problem: id }),
-      ProblemExample.deleteMany({ problem: id }),
-      ProblemTestcase.deleteMany({ problem: id }),
-      ProblemBoilerplate.deleteMany({ problem: id }),
-      ProblemTag.deleteMany({ problem: id }),
-      ProblemCompanyTag.deleteMany({ problem: id }),
-      ProblemStats.deleteMany({ problem: id }),
+      Problem.deleteOne({ _id: id }, { session }),
+      ProblemDescription.deleteMany({ problem: id }, { session }),
+      ProblemExample.deleteMany({ problem: id }, { session }),
+      ProblemTestcase.deleteMany({ problem: id }, { session }),
+      ProblemBoilerplate.deleteMany({ problem: id }, { session }),
+      ProblemTag.deleteMany({ problem: id }, { session }),
+      ProblemCompanyTag.deleteMany({ problem: id }, { session }),
+      ProblemStats.deleteMany({ problem: id }, { session }),
     ]);
 
-    // Clear relevant caches
-    await redis.del(`problem:slug:${problem.slug}`);
-    await clearCache("problem:list:*");
+    // ================= COMMIT =================
+    await session.commitTransaction();
+    session.endSession();
+
+
 
     return res.json({
       success: true,
       message: "Problem deleted successfully",
     });
   } catch (error) {
-    console.log("Error in deleteProblem", error);
+    await session.abortTransaction();
+    session.endSession();
+
+    console.error("❌ Error in deleteProblem", error);
+
     return res.status(500).json({
       success: false,
       message: "Server error",
     });
   }
 };
+
 

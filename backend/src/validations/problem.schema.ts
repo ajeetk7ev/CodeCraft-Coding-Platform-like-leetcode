@@ -2,15 +2,15 @@ import { z } from "zod";
 
 // Schema for problem examples
 const exampleSchema = z.object({
-  input: z.string().min(1, "Input is required"),
-  output: z.string().min(1, "Output is required"),
+  input: z.string().min(1, "Input is required").optional(),
+  output: z.string().min(1, "Output is required").optional(),
   explanation: z.string().optional(),
 });
 
 // Schema for testcases
 const testcaseSchema = z.object({
-  input: z.string().min(1, "Input is required"),
-  output: z.string().min(1, "Output is required"),
+  input: z.string().min(1, "Input is required").optional(),
+  output: z.string().min(1, "Output is required").optional(),
   isHidden: z.boolean().default(false),
 });
 

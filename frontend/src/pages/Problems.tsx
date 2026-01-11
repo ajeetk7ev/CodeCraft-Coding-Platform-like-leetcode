@@ -33,8 +33,6 @@ export default function Problems() {
   const navigate = useNavigate();
   const { token } = useAuthStore();
 
-  console.log("token in Problems page:", token);
-
   const [problems, setProblems] = useState<Problem[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterOptions, setFilterOptions] = useState<FilterOptions>({ tags: [], companies: [] });
@@ -51,7 +49,6 @@ export default function Problems() {
   const [limit] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
 
-  console.log("Problems state:", problems);
 
   /* ---------------- AUTH GUARD ---------------- */
   useEffect(() => {

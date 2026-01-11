@@ -144,6 +144,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     removeFromLocalStorage("token");
     // Remove axios default headers
     delete axios.defaults.headers.common["Authorization"];
+    set({ user: null, token: null });
   },
 
   // ================= FETCH USER =================
