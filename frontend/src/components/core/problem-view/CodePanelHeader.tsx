@@ -8,8 +8,11 @@ import {
   Minimize2,
   LoaderCircle,
   ChevronLeft,
+  Home,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
+import { useAuthStore } from "@/stores/authStore";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const LANGUAGES = [
   { id: "cpp", label: "C++" },
@@ -43,11 +46,20 @@ export default function CodePanelHeader({
   isFullscreen,
 }: Props) {
   const navigate = useNavigate();
+  const { user } = useAuthStore();
 
   return (
     <div className="flex justify-between items-center px-4 py-2 bg-[#0f172a] border-b border-[#1e293b] shadow-sm z-30">
       {/* Left Section */}
       <div className="flex items-center gap-3">
+        <Link
+          to="/"
+          className="flex items-center justify-center w-8 h-8 rounded-lg bg-[#1e293b] text-gray-400 hover:text-white hover:bg-indigo-600 transition-all"
+          title="Home"
+        >
+          <Home size={16} />
+        </Link>
+
         <button
           onClick={() => navigate("/problems")}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-400 hover:text-white hover:bg-white/5 transition-all group"
@@ -111,24 +123,39 @@ export default function CodePanelHeader({
       </div>
 
       {/* Right Section */}
-      <div className="flex items-center gap-1">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onToggleSettings}
-          className="h-8 w-8 text-gray-400 hover:text-white hover:bg-white/5"
-        >
-          <Settings size={16} />
-        </Button>
+      <div className="flex items-center gap-3">
+        {user && (
+          <Link to={`/profile/${user.username}`}>
+            <Avatar className="h-8 w-8 border border-[#1e293b] hover:border-indigo-500 transition-colors cursor-pointer">
+              <AvatarImage src={user.avatar} />
+              <AvatarFallback className="bg-indigo-600 text-xs text-white">
+                {user.username?.[0]?.toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+          </Link>
+        )}
 
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onToggleFullscreen}
-          className="h-8 w-8 text-gray-400 hover:text-white hover:bg-white/5"
-        >
-          {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
-        </Button>
+        {user && <div className="hidden sm:block h-5 w-[1px] bg-[#1e293b]" />}
+
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onToggleSettings}
+            className="h-8 w-8 text-gray-400 hover:text-white hover:bg-white/5"
+          >
+            <Settings size={16} />
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onToggleFullscreen}
+            className="h-8 w-8 text-gray-400 hover:text-white hover:bg-white/5"
+          >
+            {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+          </Button>
+        </div>
       </div>
     </div>
   );
