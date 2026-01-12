@@ -9,15 +9,6 @@ type Testcase = {
   output?: string;
 };
 
-type Example = {
-  input: string;
-};
-
-type ParsedInput = {
-  key: string;
-  value: string;
-};
-
 type RunTestcase = {
   stdin: string;
   expectedOutput: string;
@@ -25,45 +16,23 @@ type RunTestcase = {
 
 interface Props {
   testcases: Testcase[];
-  examples: Example[];
   result: any;
   onChange: (cases: RunTestcase[]) => void;
 }
-
-/* ---------- helpers ---------- */
-
-const extractKeys = (input = "") =>
-  input.split(",").map((p) => p.split("=")[0].trim());
-
-const buildInputs = (example: string, value = "") => {
-  const keys = extractKeys(example);
-  const values = value.split(",");
-
-  return keys.map((k, i) => ({
-    key: k,
-    value: values[i]?.trim() || "",
-  }));
-};
 
 /* ====================================================== */
 
 export default function TestcasePanel({
   testcases,
-  examples,
   result,
   onChange,
 }: Props) {
   const [activeTab, setActiveTab] = useState<"testcase" | "result">("testcase");
   const [activeCase, setActiveCase] = useState(0);
   const [activeResultCase, setActiveResultCase] = useState(0);
-  const [cases, setCases] = useState<ParsedInput[][]>([]);
 
   /* ---------- init testcases ---------- */
   useEffect(() => {
-    const baseExample = examples?.[0]?.input ?? "x";
-    const parsed = testcases.map((tc) => buildInputs(baseExample, tc.input));
-
-    setCases(parsed);
     setActiveCase(0);
 
     onChange(
@@ -72,7 +41,7 @@ export default function TestcasePanel({
         expectedOutput: tc.output ?? "",
       }))
     );
-  }, [testcases, examples]);
+  }, [testcases]);
 
   useEffect(() => {
     if (result) {
@@ -128,7 +97,7 @@ export default function TestcasePanel({
               className="flex-1 flex flex-col overflow-hidden"
             >
               <div className="flex flex-nowrap gap-2 px-4 py-3 bg-[#0f172a] overflow-x-auto no-scrollbar">
-                {cases.map((_, idx) => (
+                {testcases.map((_, idx) => (
                   <button
                     key={idx}
                     onClick={() => setActiveCase(idx)}
@@ -143,18 +112,29 @@ export default function TestcasePanel({
               </div>
 
               <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
-                {cases[activeCase]?.map((input, idx) => (
-                  <div key={idx} className="space-y-2">
-                    <div className="flex items-center gap-2 text-gray-400 font-medium text-xs">
-                      <ChevronRight size={14} className="text-indigo-400" />
-                      <span>{input.key}</span>
-                    </div>
-                    <div className="w-full bg-[#1e293b] border border-[#334155] rounded-xl px-4 py-3 text-gray-200 font-mono shadow-inner">
-                      {input.value}
-                    </div>
+                {/* Input Section */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-gray-400 font-medium text-xs">
+                    <ChevronRight size={14} className="text-indigo-400" />
+                    <span>Input</span>
                   </div>
-                ))}
-                {cases.length === 0 && (
+                  <div className="w-full bg-[#1e293b] border border-[#334155] rounded-xl px-4 py-3 text-gray-200 font-mono shadow-inner outline-none focus:ring-1 focus:ring-indigo-500/50 transition-all whitespace-pre-wrap">
+                    {testcases[activeCase]?.input}
+                  </div>
+                </div>
+
+                {/* Expected Output Section */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-gray-400 font-medium text-xs">
+                    <ChevronRight size={14} className="text-emerald-400" />
+                    <span>Expected Output</span>
+                  </div>
+                  <div className="w-full bg-[#1e293b] border border-[#334155] rounded-xl px-4 py-3 text-gray-400 font-mono shadow-inner opacity-80 whitespace-pre-wrap">
+                    {testcases[activeCase]?.output}
+                  </div>
+                </div>
+
+                {testcases.length === 0 && (
                   <div className="h-full flex flex-col items-center justify-center text-gray-500 gap-2 italic">
                     <Info size={24} />
                     <span>No test cases available</span>

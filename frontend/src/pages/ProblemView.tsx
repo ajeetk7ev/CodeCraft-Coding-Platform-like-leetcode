@@ -216,7 +216,6 @@ export default function ProblemView() {
                 />
                 <TestcasePanel
                   testcases={problem.testcases}
-                  examples={problem.examples}
                   result={runResult}
                   onChange={setRunTestcases}
                 />
@@ -234,7 +233,6 @@ export default function ProblemView() {
               <div className="flex-1 border-t border-[#1e293b] min-h-0 bg-[#0f172a]">
                 <TestcasePanel
                   testcases={problem.testcases}
-                  examples={problem.examples}
                   result={runResult}
                   onChange={setRunTestcases}
                 />
