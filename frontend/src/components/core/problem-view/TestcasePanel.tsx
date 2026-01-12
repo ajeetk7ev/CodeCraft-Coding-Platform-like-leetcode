@@ -5,8 +5,9 @@ import { CheckCircle2, XCircle, Info, Clock, Database, ChevronRight } from "luci
 /* ---------- types ---------- */
 
 type Testcase = {
-  input?: string;
+  input: string;
   output?: string;
+  isCustom?: boolean;
 };
 
 type RunTestcase = {
@@ -22,6 +23,8 @@ interface Props {
 
 /* ====================================================== */
 
+import { Plus, X } from "lucide-react";
+
 export default function TestcasePanel({
   testcases,
   result,
@@ -31,17 +34,28 @@ export default function TestcasePanel({
   const [activeCase, setActiveCase] = useState(0);
   const [activeResultCase, setActiveResultCase] = useState(0);
 
-  /* ---------- init testcases ---------- */
-  useEffect(() => {
-    setActiveCase(0);
+  // Internal state for test cases (merged initial + custom)
+  const [internalCases, setInternalCases] = useState<Testcase[]>([]);
 
+  // Initialize internal state from props when they change (new problem)
+  useEffect(() => {
+    setInternalCases(testcases.map(tc => ({
+      input: tc.input || "",
+      output: tc.output || "",
+      isCustom: false
+    })));
+    setActiveCase(0);
+  }, [testcases]);
+
+  // Sync parent with internal state changes
+  useEffect(() => {
     onChange(
-      testcases.map((tc) => ({
-        stdin: tc.input ?? "",
-        expectedOutput: tc.output ?? "",
+      internalCases.map((tc) => ({
+        stdin: tc.input,
+        expectedOutput: tc.output || "",
       }))
     );
-  }, [testcases]);
+  }, [internalCases, onChange]);
 
   useEffect(() => {
     if (result) {
@@ -50,6 +64,33 @@ export default function TestcasePanel({
     }
   }, [result]);
 
+  const handleAddCase = () => {
+    const newCase = { input: "", output: "", isCustom: true };
+    setInternalCases([...internalCases, newCase]);
+    setActiveCase(internalCases.length); // Switch to new case
+  };
+
+  const handleDeleteCase = (e: React.MouseEvent, index: number) => {
+    e.stopPropagation();
+    const newCases = internalCases.filter((_, i) => i !== index);
+    setInternalCases(newCases);
+    if (activeCase >= index && activeCase > 0) {
+      setActiveCase(activeCase - 1);
+    }
+  };
+
+  const handleInputChange = (value: string) => {
+    const newCases = [...internalCases];
+    newCases[activeCase] = { ...newCases[activeCase], input: value };
+    setInternalCases(newCases);
+  };
+
+  const handleOutputChange = (value: string) => {
+    const newCases = [...internalCases];
+    newCases[activeCase] = { ...newCases[activeCase], output: value };
+    setInternalCases(newCases);
+  };
+
   /* ---------- detect result type ---------- */
   const isRunResult = result?.results;
   const overallVerdict = result?.verdict || (isRunResult && result.results.every((r: any) => r.verdict === "ACCEPTED") ? "ACCEPTED" : "FAILED");
@@ -57,13 +98,13 @@ export default function TestcasePanel({
   return (
     <div className="flex-1 min-h-0 bg-[#0f172a] flex flex-col text-sm overflow-hidden">
       {/* Tabs */}
-      <div className="flex items-center justify-between px-4 border-b border-[#1e293b] bg-[#1e293b]">
-        <div className="flex gap-6">
+      <div className="flex items-center justify-between px-4 border-b border-[#1e293b] bg-[#1e293b] h-12 shrink-0">
+        <div className="flex gap-6 h-full">
           {["testcase", "result"].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab as any)}
-              className={`pt-3 pb-2 text-xs font-semibold uppercase tracking-wider transition-all relative ${activeTab === tab ? "text-white" : "text-gray-500 hover:text-gray-300"
+              className={`h-full px-1 text-xs font-semibold uppercase tracking-wider transition-all relative flex items-center ${activeTab === tab ? "text-white" : "text-gray-500 hover:text-gray-300"
                 }`}
             >
               {tab === "testcase" ? "Testcase" : "Test Result"}
@@ -96,48 +137,77 @@ export default function TestcasePanel({
               exit={{ opacity: 0, y: -10 }}
               className="flex-1 flex flex-col overflow-hidden"
             >
-              <div className="flex flex-nowrap gap-2 px-4 py-3 bg-[#0f172a] overflow-x-auto no-scrollbar">
-                {testcases.map((_, idx) => (
-                  <button
+
+              {/* Case Tabs */}
+              <div className="flex items-center gap-2 px-4 py-3 bg-[#0f172a] overflow-x-auto no-scrollbar shrink-0">
+                {internalCases.map((tc, idx) => (
+                  <div
                     key={idx}
                     onClick={() => setActiveCase(idx)}
-                    className={`shrink-0 px-4 py-1.5 rounded-lg text-xs font-medium transition-all ${activeCase === idx
-                      ? "bg-slate-700 text-white shadow-lg"
-                      : "bg-slate-800/50 text-gray-400 hover:bg-slate-800 hover:text-gray-200"
+                    className={`shrink-0 group flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer border ${activeCase === idx
+                      ? "bg-slate-800 border-indigo-500/50 text-white shadow-sm"
+                      : "bg-slate-900/50 border-transparent text-gray-400 hover:bg-slate-800 hover:text-gray-200"
                       }`}
                   >
-                    Case {idx + 1}
-                  </button>
+                    <span>Case {idx + 1}</span>
+                    {tc.isCustom && (
+                      <div
+                        onClick={(e) => handleDeleteCase(e, idx)}
+                        className={`p-0.5 rounded-md hover:bg-red-500/20 hover:text-red-400 transition-colors ${activeCase === idx ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}
+                      >
+                        <X size={12} />
+                      </div>
+                    )}
+                  </div>
                 ))}
+
+                <button
+                  onClick={handleAddCase}
+                  className="shrink-0 flex items-center justify-center w-8 h-8 rounded-lg border border-dashed border-gray-700 text-gray-500 hover:text-indigo-400 hover:border-indigo-500/50 hover:bg-indigo-500/10 transition-all"
+                  title="Add Custom Test Case"
+                >
+                  <Plus size={14} />
+                </button>
               </div>
 
               <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
-                {/* Input Section */}
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-gray-400 font-medium text-xs">
-                    <ChevronRight size={14} className="text-indigo-400" />
-                    <span>Input</span>
-                  </div>
-                  <div className="w-full bg-[#1e293b] border border-[#334155] rounded-xl px-4 py-3 text-gray-200 font-mono shadow-inner outline-none focus:ring-1 focus:ring-indigo-500/50 transition-all whitespace-pre-wrap">
-                    {testcases[activeCase]?.input}
-                  </div>
-                </div>
+                {internalCases.length > 0 ? (
+                  <>
+                    {/* Input Section */}
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-gray-400 font-medium text-xs">
+                        <ChevronRight size={14} className="text-indigo-400" />
+                        <span>Input</span>
+                      </div>
+                      <textarea
+                        value={internalCases[activeCase]?.input || ""}
+                        onChange={(e) => handleInputChange(e.target.value)}
+                        className="w-full bg-[#1e293b] border border-[#334155] rounded-xl px-4 py-3 text-gray-200 font-mono text-sm shadow-inner outline-none focus:ring-1 focus:ring-indigo-500/50 transition-all resize-none min-h-[100px]"
+                        spellCheck={false}
+                        placeholder="Enter custom input here"
+                      />
+                    </div>
 
-                {/* Expected Output Section */}
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-gray-400 font-medium text-xs">
-                    <ChevronRight size={14} className="text-emerald-400" />
-                    <span>Expected Output</span>
-                  </div>
-                  <div className="w-full bg-[#1e293b] border border-[#334155] rounded-xl px-4 py-3 text-gray-400 font-mono shadow-inner opacity-80 whitespace-pre-wrap">
-                    {testcases[activeCase]?.output}
-                  </div>
-                </div>
-
-                {testcases.length === 0 && (
+                    {/* Expected Output Section (Editable optionally) */}
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-gray-400 font-medium text-xs">
+                        <ChevronRight size={14} className="text-emerald-400" />
+                        <span>Expected Output</span>
+                      </div>
+                      <textarea
+                        value={internalCases[activeCase]?.output || ""}
+                        onChange={(e) => handleOutputChange(e.target.value)}
+                        className="w-full bg-[#1e293b] border border-[#334155] rounded-xl px-4 py-3 text-gray-400 font-mono text-sm shadow-inner outline-none focus:ring-1 focus:ring-emerald-500/50 transition-all resize-none min-h-[80px]"
+                        placeholder="Optional for custom cases"
+                        spellCheck={false}
+                      />
+                    </div>
+                  </>
+                ) : (
                   <div className="h-full flex flex-col items-center justify-center text-gray-500 gap-2 italic">
                     <Info size={24} />
                     <span>No test cases available</span>
+                    <button onClick={handleAddCase} className="text-indigo-400 text-xs hover:underline">Add one</button>
                   </div>
                 )}
               </div>
