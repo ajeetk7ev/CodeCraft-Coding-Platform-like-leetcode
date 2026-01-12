@@ -4,7 +4,7 @@ import Navbar from "@/components/common/Navbar";
 import { useDashboardCollapsedStore } from "@/stores/dashboardCollapsedStore";
 import { Outlet } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { useAuthStore } from "@/stores/authStore";
+
 
 export default function AdminLayout() {
   const collapsed = useDashboardCollapsedStore((state) => state.collapsed);

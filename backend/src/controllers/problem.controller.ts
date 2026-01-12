@@ -286,10 +286,6 @@ export const getProblems = async (req: Request, res: Response) => {
       pages: Math.ceil(total / limitNum),
     };
 
-    console.log("🚀 ~ getProblems ~ enrichedProblems:", enrichedProblems)
-
-
-
     return res.json({
       success: true,
       data: enrichedProblems,

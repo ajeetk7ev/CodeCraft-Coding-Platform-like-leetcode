@@ -2,8 +2,6 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { API_URL } from "../../utils/api";
 import {
-  LineChart,
-  Line,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -18,16 +16,13 @@ import {
   Area,
 } from "recharts";
 import { useAuthStore } from "@/stores/authStore";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   BarChart3,
-  TrendingUp,
-  PieChart as PieIcon,
   Activity,
   Target,
   Layers,
   ChevronRight,
-  LoaderCircle
 } from "lucide-react";
 
 const ChartsSection = () => {
@@ -37,7 +32,6 @@ const ChartsSection = () => {
   const [mostSolvedData, setMostSolvedData] = useState<any[]>([]);
   const [difficultyData, setDifficultyData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchChartData();
@@ -46,7 +40,6 @@ const ChartsSection = () => {
   const fetchChartData = async () => {
     try {
       setLoading(true);
-      setError(null);
       const authHeaders = { headers: { Authorization: `Bearer ${token}` } };
 
       const [s, a, m, d] = await Promise.all([
@@ -62,7 +55,6 @@ const ChartsSection = () => {
       setDifficultyData(d.data.data);
     } catch (err: any) {
       console.error("Error fetching chart data:", err);
-      setError(err.response?.data?.message || "Failed to load chart data.");
     } finally {
       setLoading(false);
     }

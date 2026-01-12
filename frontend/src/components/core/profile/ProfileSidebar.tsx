@@ -1,9 +1,9 @@
-import { Github, Linkedin, Pencil, Mail, MapPin, Calendar, ExternalLink } from "lucide-react";
+import { Github, Linkedin, Pencil, Mail, MapPin, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useProfileStore } from "@/stores/profileStore";
 import { useState } from "react";
 import EditProfileModal from "./EditProfileModal";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 
 export default function ProfileSidebar() {
   const { profile } = useProfileStore();

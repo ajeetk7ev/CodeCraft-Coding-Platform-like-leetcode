@@ -4,8 +4,8 @@ import { API_URL } from "@/utils/api";
 import Navbar from "@/components/common/Navbar";
 import { Link } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Medal, Trophy, Crown, Star, Flame, Award, ChevronRight, TrendingUp } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { Medal, Trophy, Crown, Flame, TrendingUp } from "lucide-react";
+import { motion } from "framer-motion";
 
 interface LeaderboardUser {
     _id: string;
@@ -24,7 +24,7 @@ interface LeaderboardUser {
 export default function Leaderboard() {
     const [users, setUsers] = useState<LeaderboardUser[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+
 
     useEffect(() => {
         const fetchLeaderboard = async () => {
@@ -36,7 +36,7 @@ export default function Leaderboard() {
                 }
             } catch (err) {
                 console.error("Failed to fetch leaderboard", err);
-                setError("Unable to load the competitive charts. Please Refresh.");
+
             } finally {
                 setIsLoading(false);
             }

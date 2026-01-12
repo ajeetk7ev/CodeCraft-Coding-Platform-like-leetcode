@@ -1,5 +1,5 @@
 import { useProfileStore } from "@/stores/profileStore";
-import { Trophy, CheckCircle, TrendingUp, Zap, Target, Award, BrainCircuit } from "lucide-react";
+import { Trophy, Zap, Target, Award, BrainCircuit } from "lucide-react";
 import AnimatedCounter from "@/components/common/AnimatedCounter";
 import { motion } from "framer-motion";
 
@@ -11,7 +11,6 @@ export default function ProfileStats() {
   const { stats } = profile;
 
   // Calculate difficulty percentages
-  const total = stats.totalSolved || 1;
   const easyP = Math.min((stats.easySolved / 50) * 100, 100); // Target 50 for easy
   const mediumP = Math.min((stats.mediumSolved / 30) * 100, 100); // Target 30 for medium
   const hardP = Math.min((stats.hardSolved / 10) * 100, 100); // Target 10 for hard

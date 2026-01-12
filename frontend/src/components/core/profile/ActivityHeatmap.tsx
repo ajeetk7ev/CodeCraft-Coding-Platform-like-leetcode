@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { ChevronDown, Calendar, Activity, Flame } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 
 interface Submission {
   date: string;
