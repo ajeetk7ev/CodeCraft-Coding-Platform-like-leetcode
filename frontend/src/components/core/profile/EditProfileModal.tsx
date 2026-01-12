@@ -94,7 +94,7 @@ export default function EditProfileModal({ open, onClose }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={(val) => !val && onClose()}>
-      <DialogContent className="bg-slate-900/90 backdrop-blur-2xl border-white/10 text-slate-200 max-w-xl rounded-[2.5rem] p-0 overflow-hidden shadow-2xl">
+      <DialogContent showCloseButton={false} className="bg-slate-900/90 backdrop-blur-2xl border-white/10 text-slate-200 max-w-xl rounded-[2.5rem] p-0 overflow-hidden shadow-2xl">
         <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-transparent pointer-events-none" />
 
         <DialogHeader className="p-8 pb-4 relative z-10">
