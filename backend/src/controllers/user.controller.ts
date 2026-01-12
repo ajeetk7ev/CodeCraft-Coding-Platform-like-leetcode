@@ -109,7 +109,6 @@ export const getProfile = async (req: Request, res: Response) => {
       }
     };
 
-    console.log("getProfile Response Data:", JSON.stringify(responseData, null, 2));
 
     return res.status(200).json(responseData);
 

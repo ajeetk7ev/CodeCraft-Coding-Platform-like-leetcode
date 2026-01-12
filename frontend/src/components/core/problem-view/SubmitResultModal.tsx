@@ -14,8 +14,6 @@ export default function SubmitResultModal({
 }: Props) {
   const [show, setShow] = useState(false);
 
-  console.log("result ", result);
-  console.log("open ", open);
 
   useEffect(() => {
     if (open) {
