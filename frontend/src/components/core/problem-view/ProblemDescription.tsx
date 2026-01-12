@@ -71,31 +71,31 @@ export default function ProblemDescription({ problem }: { problem: Problem }) {
             {problem.examples.map((ex, i) => (
               <div
                 key={i}
-                className="group relative overflow-hidden rounded-xl bg-[#1e1e1e] border border-gray-800 transition-all hover:border-gray-700"
+                className="group relative overflow-hidden rounded-xl bg-gray-900/50 border border-gray-800 transition-all hover:border-gray-700"
               >
-                <div className="px-4 py-3 border-b border-gray-800 bg-gray-900/50 flex items-center justify-between">
-                  <span className="text-xs font-medium text-gray-400">Example {i + 1}</span>
+                <div className="px-4 py-3 border-b border-gray-800 bg-gray-800/30 flex items-center justify-between">
+                  <span className="text-xs font-bold text-gray-300">Example {i + 1}</span>
                 </div>
 
                 <div className="p-4 space-y-3 font-mono text-sm">
                   <div className="space-y-1">
-                    <span className="text-xs uppercase tracking-wider text-gray-500 font-semibold select-none">Input</span>
-                    <div className="bg-gray-950/50 p-2.5 rounded-lg text-gray-300 border border-gray-800/50">
+                    <span className="text-xs uppercase tracking-wider text-gray-500 font-bold select-none">Input</span>
+                    <div className="bg-gray-800/50 p-3 rounded-lg text-gray-200 border border-gray-700/50 shadow-inner">
                       {ex.input}
                     </div>
                   </div>
 
                   <div className="space-y-1">
-                    <span className="text-xs uppercase tracking-wider text-gray-500 font-semibold select-none">Output</span>
-                    <div className="bg-gray-950/50 p-2.5 rounded-lg text-gray-300 border border-gray-800/50">
+                    <span className="text-xs uppercase tracking-wider text-gray-500 font-bold select-none">Output</span>
+                    <div className="bg-gray-800/50 p-3 rounded-lg text-gray-200 border border-gray-700/50 shadow-inner">
                       {ex.output}
                     </div>
                   </div>
 
                   {ex.explanation && (
                     <div className="pt-2">
-                      <div className="text-xs text-gray-400 leading-relaxed">
-                        <span className="text-gray-500 font-semibold uppercase text-[10px] tracking-wider mr-2">Explanation:</span>
+                      <div className="text-xs text-gray-400 leading-relaxed bg-gray-800/20 p-3 rounded-lg border border-gray-800/50">
+                        <span className="text-gray-500 font-bold uppercase text-[10px] tracking-wider mr-2">Explanation:</span>
                         {ex.explanation}
                       </div>
                     </div>
@@ -109,11 +109,11 @@ export default function ProblemDescription({ problem }: { problem: Problem }) {
         {/* Constraints */}
         <div className="space-y-3">
           <h3 className="text-sm font-semibold text-gray-200">Constraints</h3>
-          <div className="rounded-xl border border-gray-800 bg-[#1e1e1e] p-4">
+          <div className="rounded-xl border border-gray-700/50 bg-gray-800/20 p-4">
             <ul className="space-y-2">
               {problem.constraints.map((c, i) => (
-                <li key={i} className="flex items-start gap-2.5 text-sm text-gray-400 font-mono">
-                  <span className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-gray-600 mt-2" />
+                <li key={i} className="flex items-start gap-3 text-sm text-gray-300 font-mono bg-gray-800/50 px-3 py-2 rounded-lg border border-gray-700/50">
+                  <span className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-gray-500 mt-2" />
                   <span dangerouslySetInnerHTML={{ __html: c }} />
                 </li>
               ))}
