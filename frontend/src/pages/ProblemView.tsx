@@ -5,6 +5,7 @@ import { useParams } from "react-router-dom";
 import CodePanel from "@/components/core/problem-view/CodePanel";
 import TestcasePanel from "@/components/core/problem-view/TestcasePanel";
 import SubmitResultModal from "@/components/core/problem-view/SubmitResultModal";
+import { FileText, Code2 } from "lucide-react";
 
 import { useProblemStore } from "@/stores/problemStore";
 import { useSubmissionStore } from "@/stores/submissionStore";
@@ -160,108 +161,107 @@ export default function ProblemView() {
   if (!problem) return null;
 
   return (
-    <div ref={rootRef} className="fixed inset-0 flex flex-col md:flex-row bg-[#0f172a] text-gray-100">
+    <div ref={rootRef} className="fixed inset-0 flex flex-col bg-[#0f172a] text-gray-100">
 
-      {/* MOBILE TABS HEADER (Optional: can be bottom nav too, let's do top for now or bottom) */}
-      {/* Going with Mobile Bottom Nav approach or conditional rendering of huge chunks */}
-
-      {/* LEFT PANEL (Problem Details) */}
-      {(!isMobile || activeTab === "problem") && !isFullscreen && (
-        <div
-          style={{ width: isMobile ? "100%" : `${leftWidth}%` }}
-          className={`flex flex-col bg-[#0f172a] ${isMobile ? "h-full pb-16" : "border-r border-[#1e293b] h-full"
-            }`}
-        >
-          <ProblemDetails problem={problem} />
-        </div>
-      )}
-
-      {/* RESIZER (Desktop Only) */}
-      {!isMobile && !isFullscreen && (
-        <div
-          onMouseDown={onVerticalMouseDown}
-          className="w-1 bg-[#1e293b] cursor-col-resize hover:bg-slate-700 transition-colors"
-        />
-      )}
-
-      {/* RIGHT PANEL (Code & Testcases) */}
-      {(!isMobile || activeTab === "code") && (
-        <div
-          className={`flex-1 overflow-hidden flex flex-col ${isMobile ? "h-full pb-16" : ""}`}
-        >
-          <div ref={verticalAreaRef} className="h-full flex flex-col z-10 relative">
-            <div style={{ height: isMobile || isFullscreen ? '100%' : `${editorHeight}%` }}>
-              <CodePanel
-                problemSlug={slug}
-                boilerplates={problem.boilerplates}
-                runCodeLoading={runCodeLoading}
-                submitCodeLoading={submitCodeLoading}
-                onRun={(code, language) =>
-                  runCode({ slug, code, language, testcases: runTestcases })
-                }
-                onSubmit={(code, language) =>
-                  submitCode({ problemId: problem._id, code, language })
-                }
-                preferences={problem.preferences}
-                isFullscreen={isFullscreen}
-                onToggleFullscreen={() => setIsFullscreen(!isFullscreen)}
-              />
-            </div>
-
-            {!isFullscreen && !isMobile && (
-              <>
-                <div
-                  onMouseDown={onHorizontalMouseDown}
-                  className="h-1 z-50 bg-[#0f172a] cursor-row-resize hover:bg-slate-700 transition-colors overflow-y-auto"
-                />
-                <TestcasePanel
-                  testcases={problem.testcases}
-                  result={runResult}
-                  onChange={setRunTestcases}
-                />
-              </>
-            )}
-
-            {/* Mobile Testcase Panel (Always shown below editor in mobile code view, or toggleable? 
-                For now, let's keep it hidden or stacked. 
-                Stacking might condense the editor too much. 
-                Let's put it as a toggle or just stack with fixed ratio for now if space permits, 
-                or better: just hide it for MVP mobile or make it a drawer.
-                Actually, let's just stack it with 'flex-1' for editor and fixed for testcase or allow scroll.
-            */}
-            {isMobile && !isFullscreen && (
-              <div className="flex-1 border-t border-[#1e293b] min-h-0 bg-[#0f172a]">
-                <TestcasePanel
-                  testcases={problem.testcases}
-                  result={runResult}
-                  onChange={setRunTestcases}
-                />
-              </div>
-            )}
+      {/* MOBILE TABS HEADER */}
+      {isMobile && !isFullscreen && (
+        <div className="px-4 py-3 shrink-0 bg-[#0f172a] border-b border-[#1e293b]">
+          <div className="flex bg-gray-900/40 p-1 rounded-xl border border-gray-800/50">
+            {[
+              { id: "problem", label: "Description", icon: FileText },
+              { id: "code", label: "Code", icon: Code2 },
+            ].map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id as any)}
+                  className={`flex-1 flex items-center justify-center gap-2 py-2 text-xs font-semibold rounded-lg transition-all border border-transparent ${isActive
+                    ? "bg-gray-800 text-white shadow-sm border-gray-700/50"
+                    : "text-gray-400 hover:text-gray-200 hover:bg-gray-800/30"
+                    }`}
+                >
+                  <Icon size={14} className={isActive ? "text-indigo-400" : "text-gray-500"} />
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
 
-      {/* MOBILE BOTTOM NAV */}
-      {isMobile && !isFullscreen && (
-        <div className="fixed bottom-0 left-0 right-0 h-16 bg-gray-950 border-t border-gray-800 flex items-center justify-around z-50 pb-safe">
-          <button
-            onClick={() => setActiveTab("problem")}
-            className={`flex flex-col items-center gap-1 p-2 ${activeTab === "problem" ? "text-indigo-400" : "text-gray-500"
+      <div className="flex-1 flex flex-col md:flex-row overflow-hidden relative">
+        {/* LEFT PANEL (Problem Details) */}
+        {(!isMobile || activeTab === "problem") && !isFullscreen && (
+          <div
+            style={{ width: isMobile ? "100%" : `${leftWidth}%` }}
+            className={`flex flex-col bg-[#0f172a] ${isMobile ? "h-full" : "border-r border-[#1e293b] h-full"
               }`}
           >
-            <span className="text-sm font-medium">Description</span>
-          </button>
-          <button
-            onClick={() => setActiveTab("code")}
-            className={`flex flex-col items-center gap-1 p-2 ${activeTab === "code" ? "text-indigo-400" : "text-gray-500"
-              }`}
-          >
-            <span className="text-sm font-medium">Code</span>
-          </button>
-        </div>
-      )}
+            <ProblemDetails problem={problem} />
+          </div>
+        )}
 
+        {/* RESIZER (Desktop Only) */}
+        {!isMobile && !isFullscreen && (
+          <div
+            onMouseDown={onVerticalMouseDown}
+            className="w-1 bg-[#1e293b] cursor-col-resize hover:bg-slate-700 transition-colors"
+          />
+        )}
+
+        {/* RIGHT PANEL (Code & Testcases) */}
+        {(!isMobile || activeTab === "code") && (
+          <div
+            className={`flex-1 overflow-hidden flex flex-col h-full`}
+          >
+            <div ref={verticalAreaRef} className="h-full flex flex-col z-10 relative">
+              <div style={{ height: isFullscreen ? '100%' : (isMobile ? '55%' : `${editorHeight}%`) }}>
+                <CodePanel
+                  problemSlug={slug}
+                  boilerplates={problem.boilerplates}
+                  runCodeLoading={runCodeLoading}
+                  submitCodeLoading={submitCodeLoading}
+                  onRun={(code, language) =>
+                    runCode({ slug, code, language, testcases: runTestcases })
+                  }
+                  onSubmit={(code, language) =>
+                    submitCode({ problemId: problem._id, code, language })
+                  }
+                  preferences={problem.preferences}
+                  isFullscreen={isFullscreen}
+                  onToggleFullscreen={() => setIsFullscreen(!isFullscreen)}
+                />
+              </div>
+
+              {!isFullscreen && !isMobile && (
+                <>
+                  <div
+                    onMouseDown={onHorizontalMouseDown}
+                    className="h-1 z-50 bg-[#0f172a] cursor-row-resize hover:bg-slate-700 transition-colors overflow-y-auto"
+                  />
+                  <TestcasePanel
+                    testcases={problem.testcases}
+                    result={runResult}
+                    onChange={setRunTestcases}
+                  />
+                </>
+              )}
+
+              {isMobile && !isFullscreen && (
+                <div className="flex-1 border-t border-[#1e293b] min-h-0 bg-[#0f172a] overflow-hidden flex flex-col">
+                  <TestcasePanel
+                    testcases={problem.testcases}
+                    result={runResult}
+                    onChange={setRunTestcases}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
 
       <SubmitResultModal
         open={showSubmitModal}

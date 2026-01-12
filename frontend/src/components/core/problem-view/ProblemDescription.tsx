@@ -2,7 +2,7 @@ import type { Problem } from "@/types";
 import DifficultyBadge from "./DifficultyBadge";
 export default function ProblemDescription({ problem }: { problem: Problem }) {
   return (
-    <div className="h-full overflow-y-auto px-6 pb-20 scrollbar-hide">
+    <div className="h-full overflow-y-auto px-6 pb-20 scrollbar-hide [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-start justify-between gap-4 mt-2">
