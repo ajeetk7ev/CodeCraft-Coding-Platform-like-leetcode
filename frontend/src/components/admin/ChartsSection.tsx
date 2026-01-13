@@ -149,7 +149,12 @@ const ChartsSection = () => {
               animationBegin={500}
               animationDuration={1500}
               stroke="none"
-              label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+              label={({ name, percent }) =>
+                percent !== undefined
+                  ? `${name} ${(percent * 100).toFixed(0)}%`
+                  : name
+              }
+
             >
               {acWaPieData.map((entry, index) => (
                 <Cell key={`cell-${index}`} fill={entry.color} />

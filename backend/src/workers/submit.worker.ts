@@ -3,7 +3,7 @@ import { redis } from "../config/redis";
 import Submission from "../models/submission/Submission";
 import { ProblemTestcase } from "../models/problem/ProblemTestcase";
 import { ProblemStats } from "../models/problem/ProblemStats";
-import { submitToJudge0, pollJudge0Result, mapJudge0StatusToVerdict } from "../utils/judge0";
+import { submitToJudge0, pollJudge0Result, mapJudge0StatusToVerdict } from "../utils/judge0_self";
 import { SupportedLanguage } from "../models/submission/Language";
 import { Verdict } from "../models/submission/verdict";
 import { SubmissionStatus } from "../models/submission/SubmissionStatus";
@@ -37,23 +37,28 @@ export const submitWorker = new Worker<SubmitJobData, void>(
         throw new Error("No testcases found for this problem");
       }
 
+      // Sequential execution with early exit
       const testcaseResults = [];
-      let allPassed = true;
+      let shouldContinue = true;
+      let executedCount = 0;
       let totalRuntime = 0;
       let maxMemory = 0;
       let finalVerdict: Verdict = Verdict.ACCEPTED;
 
-      // Process each testcase
-      for (const testcase of testcases) {
+      // Process test cases one by one with early exit
+      for (let i = 0; i < testcases.length && shouldContinue; i++) {
+        const testcase = testcases[i];
+        if (!testcase) continue;
+
         try {
-          // Submit to Judge0
+          // Submit single test case
           const token = await submitToJudge0(
             code,
             language,
             testcase.input,
             testcase.output,
-            2, // 2 seconds CPU time limit
-            128000 // 128MB memory limit
+            2, // cpuTimeLimit
+            128000 // memoryLimit
           );
 
           // Poll for result
@@ -63,17 +68,10 @@ export const submitWorker = new Worker<SubmitJobData, void>(
           const verdict = mapJudge0StatusToVerdict(result.status.id);
           const passed = verdict === Verdict.ACCEPTED;
 
-          // Update final verdict if testcase failed
-          if (!passed && finalVerdict === Verdict.ACCEPTED) {
-            finalVerdict = verdict;
-          }
-
-          if (!passed) {
-            allPassed = false;
-          }
+          executedCount++;
 
           // Accumulate runtime and memory
-          const runtime = result.time ? parseFloat(result.time) * 1000 : 0; // Convert to milliseconds
+          const runtime = result.time ? parseFloat(result.time) * 1000 : 0;
           const memory = result.memory || 0;
           totalRuntime += runtime;
           maxMemory = Math.max(maxMemory, memory);
@@ -87,10 +85,20 @@ export const submitWorker = new Worker<SubmitJobData, void>(
             runtime,
             memory,
           });
+
+          // EARLY EXIT: Stop if test case failed
+          if (!passed) {
+            shouldContinue = false;
+            finalVerdict = verdict; // WA, TLE, MLE, RE, etc.
+            console.log(`⚠️ Test case ${i + 1} failed with verdict: ${verdict}. Stopping execution.`);
+          }
+
         } catch (error: any) {
-          console.error(`Error processing testcase ${testcase._id}:`, error);
-          allPassed = false;
+          console.error(`Error processing testcase ${i + 1}:`, error);
+          shouldContinue = false;
           finalVerdict = Verdict.INTERNAL_ERROR;
+          executedCount++;
+
           testcaseResults.push({
             input: testcase.isHidden ? undefined : testcase.input,
             expectedOutput: testcase.isHidden ? undefined : testcase.output,
@@ -102,11 +110,16 @@ export const submitWorker = new Worker<SubmitJobData, void>(
         }
       }
 
-      // Determine final verdict
-      if (allPassed) {
-        finalVerdict = Verdict.ACCEPTED;
-      } else if (testcaseResults.some((r) => r.passed)) {
-        finalVerdict = Verdict.PARTIAL;
+      // Mark remaining test cases as SKIPPED
+      for (let i = executedCount; i < testcases.length; i++) {
+        testcaseResults.push({
+          input: undefined,
+          expectedOutput: undefined,
+          userOutput: "SKIPPED - Previous test case failed",
+          passed: false,
+          runtime: 0,
+          memory: 0,
+        });
       }
 
       // Get submission data (we need the user ID)
@@ -175,16 +188,6 @@ export const submitWorker = new Worker<SubmitJobData, void>(
         await stats.save();
       }
 
-      // Clear relevant caches since new submission data is now in DB
-      const cachesToClear = [
-        "leaderboard:top50",
-        "admin:dashboard:stats",
-        "admin:submissions:daily",
-        "admin:ratio:ac-vs-wa",
-        "admin:problems:most-solved"
-      ];
-      await redis.del(...cachesToClear);
-
       console.log(`Submission ${submissionId} completed with verdict: ${finalVerdict}`);
     } catch (error: any) {
       console.error(`Error processing submit job ${job.id}:`, error);
@@ -219,4 +222,3 @@ submitWorker.on("completed", (job) => {
 submitWorker.on("failed", (job, err) => {
   console.error(`Submit job ${job?.id} failed:`, err);
 });
-

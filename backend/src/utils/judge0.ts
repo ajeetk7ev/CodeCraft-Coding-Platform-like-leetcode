@@ -2,6 +2,28 @@ import axios from "axios";
 import { SupportedLanguage } from "../models/submission/Language";
 import { Verdict } from "../models/submission/verdict";
 
+/**
+ * Judge0 RapidAPI Integration
+ * 
+ * This module provides integration with Judge0 via RapidAPI for code execution.
+ * 
+ * Features:
+ * - Single and batch code submission
+ * - Automatic base64 encoding/decoding
+ * - Result polling with timeout protection
+ * - Support for multiple programming languages
+ * 
+ * Batch Submission API:
+ * - submitBatchToJudge0(): Submit multiple test cases in one request
+ * - getBatchJudge0Results(): Fetch results for multiple submissions
+ * - pollBatchJudge0Results(): Poll until all submissions complete
+ * 
+ * Single Submission API (legacy):
+ * - submitToJudge0(): Submit a single test case
+ * - getJudge0Result(): Fetch a single result
+ * - pollJudge0Result(): Poll a single submission
+ */
+
 // Judge0 API configuration
 const JUDGE0_API_URL = process.env.JUDGE0_API_URL;
 const JUDGE0_RAPIDAPI_KEY = process.env.JUDGE0_RAPIDAPI_KEY;
@@ -29,7 +51,7 @@ interface Judge0Response {
   token: string;
 }
 
-interface Judge0Result {
+export interface Judge0Result {
   stdout: string | null;
   stderr: string | null;
   compile_output: string | null;
@@ -42,6 +64,10 @@ interface Judge0Result {
   memory: number | null;
   exit_code?: number;
   exit_signal?: number;
+}
+
+interface BatchJudge0Results {
+  submissions: Judge0Result[];
 }
 
 // ---------- helpers ----------
@@ -112,6 +138,64 @@ export const submitToJudge0 = async (
 };
 
 /**
+ * Submit multiple codes to Judge0 for execution in batch
+ */
+export const submitBatchToJudge0 = async (
+  submissions: Array<{
+    code: string;
+    language: SupportedLanguage;
+    stdin?: string;
+    expectedOutput?: string;
+    cpuTimeLimit?: number;
+    memoryLimit?: number;
+  }>
+): Promise<string[]> => {
+  try {
+    const batchSubmissions: Judge0Submission[] = submissions.map((sub) => {
+      const languageId = LANGUAGE_ID_MAP[sub.language];
+      if (!languageId) {
+        throw new Error(`Unsupported language: ${sub.language}`);
+      }
+
+      const submission: Judge0Submission = {
+        source_code: encodeBase64(sub.code)!,
+        language_id: languageId,
+        cpu_time_limit: sub.cpuTimeLimit || 2,
+        memory_limit: sub.memoryLimit || 128000,
+      };
+
+      if (sub.stdin && sub.stdin.trim() !== "") {
+        submission.stdin = encodeBase64(sub.stdin)!;
+      }
+
+      if (sub.expectedOutput && sub.expectedOutput.trim() !== "") {
+        submission.expected_output = encodeBase64(sub.expectedOutput)!;
+      }
+
+      return submission;
+    });
+
+    // Judge0 batch endpoint expects { submissions: [...] }
+    const response = await axios.post<{ token: string }[]>(
+      `${JUDGE0_API_URL}/submissions/batch?base64_encoded=true`,
+      { submissions: batchSubmissions },
+      { headers: getHeaders() }
+    );
+
+    return response.data.map((res) => res.token);
+  } catch (error: any) {
+    console.error("Error submitting batch to Judge0:");
+    if (error.response) {
+      console.error("- Status:", error.response.status);
+      console.error("- Data:", JSON.stringify(error.response.data, null, 2));
+    } else {
+      console.error("- Message:", error.message);
+    }
+    throw new Error(`Failed to submit batch to Judge0: ${error.message}`);
+  }
+};
+
+/**
  * Get result from Judge0 using token
  */
 export const getJudge0Result = async (token: string): Promise<Judge0Result> => {
@@ -131,6 +215,32 @@ export const getJudge0Result = async (token: string): Promise<Judge0Result> => {
   } catch (error: any) {
     console.error("Error fetching Judge0 result:", error);
     throw new Error(`Failed to fetch result from Judge0: ${error.message}`);
+  }
+};
+
+/**
+ * Get multiple results from Judge0 using tokens in batch
+ */
+export const getBatchJudge0Results = async (tokens: string[]): Promise<Judge0Result[]> => {
+  try {
+    const response = await axios.get<BatchJudge0Results>(
+      `${JUDGE0_API_URL}/submissions/batch?tokens=${tokens.join(",")}&base64_encoded=true`,
+      { headers: getHeaders() }
+    );
+
+    // API might return { submissions: [...] }
+    const submissions = response.data.submissions || (response.data as unknown as Judge0Result[]);
+
+    return submissions.map((res) => ({
+      ...res,
+      stdout: decodeBase64(res.stdout),
+      stderr: decodeBase64(res.stderr),
+      compile_output: decodeBase64(res.compile_output),
+      message: decodeBase64(res.message),
+    }));
+  } catch (error: any) {
+    console.error("Error fetching batch Judge0 results:", error);
+    throw new Error(`Failed to fetch batch results from Judge0: ${error.message}`);
   }
 };
 
@@ -171,6 +281,54 @@ export const pollJudge0Result = async (
   }
 
   throw new Error("Timeout waiting for Judge0 result");
+};
+
+/**
+ * Poll multiple Judge0 results until they are all ready
+ */
+export const pollBatchJudge0Results = async (
+  tokens: string[],
+  maxAttempts: number = 30,
+  delayMs: number = 1000
+): Promise<Judge0Result[]> => {
+  let pendingTokens = [...tokens];
+  const resultsMap: Record<string, Judge0Result> = {};
+
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    if (pendingTokens.length === 0) break;
+
+    const results = await getBatchJudge0Results(pendingTokens);
+
+    const remainingTokens: string[] = [];
+    results.forEach((result, index) => {
+      const token = pendingTokens[index];
+      if (token && result.status.id > 2) {
+        resultsMap[token] = result;
+      } else if (token) {
+        remainingTokens.push(token);
+      }
+    });
+
+    pendingTokens = remainingTokens;
+
+    if (pendingTokens.length > 0) {
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+  }
+
+  if (pendingTokens.length > 0) {
+    // Fetch whatever we have for the remaining ones
+    const results = await getBatchJudge0Results(pendingTokens);
+    results.forEach((result, index) => {
+      const token = pendingTokens[index];
+      if (token) {
+        resultsMap[token] = result;
+      }
+    });
+  }
+
+  // Return results in the original order of tokens
+  return tokens.map(token => resultsMap[token]!);
 };
 
 /**

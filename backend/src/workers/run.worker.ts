@@ -1,6 +1,6 @@
 import { Worker, Job } from "bullmq";
 import { redis } from "../config/redis";
-import { submitToJudge0, pollJudge0Result, mapJudge0StatusToVerdict } from "../utils/judge0";
+import { submitBatchToJudge0, pollBatchJudge0Results, mapJudge0StatusToVerdict } from "../utils/judge0_self";
 import { SupportedLanguage } from "../models/submission/Language";
 
 interface RunTestcase {
@@ -38,39 +38,45 @@ export const runWorker = new Worker<RunJobData, RunJobResult>(
   "code-run",
   async (job) => {
     const { code, language, testcases } = job.data;
-   
+
     try {
+      const submissions = testcases.filter(tc => !!tc).map(tc => ({
+        code,
+        language,
+        stdin: tc.stdin,
+        expectedOutput: tc.expectedOutput
+      }));
+
+      if (submissions.length === 0) {
+        return {
+          totalTestcases: 0,
+          passedCount: 0,
+          results: [],
+        };
+      }
+
+      const tokens = await submitBatchToJudge0(submissions);
+      const judge0Results = await pollBatchJudge0Results(tokens);
+
       const results: SingleTestcaseResult[] = [];
       let passedCount = 0;
 
-      for (let i = 0; i < testcases.length; i++) {
-        const testcase = testcases[i];
-        if (!testcase) continue;
+      for (let i = 0; i < judge0Results.length; i++) {
+        const result = judge0Results[i];
+        const testcase = submissions[i];
+        if (!result || !testcase) continue;
 
-        const { stdin, expectedOutput } = testcase;
-
-        const token = await submitToJudge0(
-          code,
-          language,
-          stdin,
-          expectedOutput
-        );
-
-        const result = await pollJudge0Result(token);
         const verdict = mapJudge0StatusToVerdict(result.status.id);
-
         const output = result.stdout?.trim() ?? "";
-        const expected = expectedOutput.trim();
+        const expected = (testcase.expectedOutput || "").trim();
 
-        const passed =
-          verdict === "ACCEPTED" && output === expected;
-
+        const passed = verdict === "ACCEPTED" && output === expected;
         if (passed) passedCount++;
 
         results.push({
           testcase: i + 1,
-          input: stdin,
-          expectedOutput,
+          input: testcase.stdin,
+          expectedOutput: testcase.expectedOutput,
           stdout: result.stdout,
           stderr: result.stderr,
           compileOutput: result.compile_output,
@@ -115,7 +121,3 @@ runWorker.on("completed", (job) => {
 runWorker.on("failed", (job, err) => {
   console.error(`Run job ${job?.id} failed:`, err);
 });
-
-
-
-
