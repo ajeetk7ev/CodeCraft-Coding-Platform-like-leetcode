@@ -1,4 +1,4 @@
-# 🚀 CodeCraft Arena
+# 🚀 CodeArena
 
 [![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://reactjs.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)](https://nodejs.org/)
@@ -7,7 +7,7 @@
 [![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
 
 <ctrl94> [!IMPORTANT]
-> **CodeCraft Arena** is a high-performance, premium coding platform designed for developers to sharpen their algorithmic skills, compete in real-time contests, and track their growth with advanced analytics.
+> **CodeArena** is a high-performance, premium coding platform designed for developers to sharpen their algorithmic skills, compete in real-time contests, and track their growth with advanced analytics.
 
 ---
 
@@ -104,5 +104,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ---
 
 <p align="center">
-  Made with ❤️ by the CodeCraft Team
+  Made with ❤️ by the CodeArena Team
 </p>
