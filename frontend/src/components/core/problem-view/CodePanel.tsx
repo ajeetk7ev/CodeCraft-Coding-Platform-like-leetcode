@@ -32,9 +32,11 @@ export default function CodePanel({
   isFullscreen,
   onToggleFullscreen,
 }: Props) {
-  const { token } = useAuthStore();
+  const { token, user } = useAuthStore();
+  const userId = user?.id || "guest";
+
   const initialLanguage =
-    getFromLocalStorage("language") || boilerplates[0].language;
+    getFromLocalStorage(`pref:${userId}:language`) || boilerplates[0].language;
 
   const [language, setLanguage] = useState(initialLanguage);
   // const [isFullscreen, setIsFullscreen] = useState(false); // Managed by parent
@@ -45,15 +47,27 @@ export default function CodePanel({
   const editorRef = useRef<any>(null);
   const codeRef = useRef("");
 
-  // 🔹 Restore code per problem + language
+  // 🔹 Restore code per user + problem + language, and initialize localStorage on first load
   useEffect(() => {
-    const storageKey = `code:${problemSlug}:${language}`;
+    const storageKey = `code:${userId}:${problemSlug}:${language}`;
     const savedCode = getFromLocalStorage(storageKey);
     const bp = boilerplates.find((b) => b.language === language);
 
-    codeRef.current = savedCode || bp?.userCodeTemplate || "";
+    if (savedCode) {
+      // Use saved code if it exists
+      codeRef.current = savedCode;
+    } else {
+      // First time loading this problem/language for this user - initialize with boilerplate
+      const initialCode = bp?.userCodeTemplate || "";
+      codeRef.current = initialCode;
+      // Save to localStorage so it persists from the start
+      if (initialCode) {
+        setToLocalStorage(storageKey, initialCode);
+      }
+    }
+
     editorRef.current?.setValue(codeRef.current);
-  }, [language, problemSlug, boilerplates]);
+  }, [language, problemSlug, boilerplates, userId]);
 
   const applySettings = async () => {
     setApplySettingsLoading(true);
@@ -89,7 +103,7 @@ export default function CodePanel({
         language={language}
         onLanguageChange={(l) => {
           setLanguage(l);
-          setToLocalStorage("language", l);
+          setToLocalStorage(`pref:${userId}:language`, l);
         }}
         onRun={() => onRun(codeRef.current, language)}
         onSubmit={() => onSubmit(codeRef.current, language)}
@@ -151,7 +165,7 @@ export default function CodePanel({
         onChange={(v) => {
           const value = v || "";
           codeRef.current = value;
-          setToLocalStorage(`code:${problemSlug}:${language}`, value);
+          setToLocalStorage(`code:${userId}:${problemSlug}:${language}`, value);
         }}
         options={{
           minimap: { enabled: false },
