@@ -100,7 +100,7 @@ export default function Signup() {
         animate={{ x: 0, opacity: 1 }}
         transition={{ delay: 0.6 }}
         onClick={() => navigate(-1)}
-        className="absolute top-8 left-8 p-2 rounded-xl bg-slate-800/50 text-slate-400 hover:text-white hover:bg-slate-700 transition-all group"
+        className="absolute top-8 left-0 sm:left-8 p-2 rounded-xl bg-slate-800/50 text-slate-400 hover:text-white hover:bg-slate-700 transition-all group"
       >
         <ArrowLeft className="h-5 w-5 group-hover:-translate-x-1 transition-transform" />
       </motion.button>

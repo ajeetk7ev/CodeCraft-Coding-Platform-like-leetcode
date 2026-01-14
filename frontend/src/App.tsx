@@ -19,6 +19,7 @@ import Discuss from "./pages/Discuss";
 import { useAuthStore } from "./stores/authStore";
 import ProtectedRoute from "./components/routing/ProtectedRoute";
 import PublicRoute from "./components/routing/PublicRoute";
+import AdminProtectedRoute from "./components/routing/AdminProtectedRoute";
 
 function App() {
   const { loadUser } = useAuthStore();
@@ -67,12 +68,13 @@ function App() {
         />
 
         {/* Admin Routes - Protected */}
+
         <Route
           path="/admin"
           element={
-            <ProtectedRoute>
+            <AdminProtectedRoute>
               <AdminDashboard />
-            </ProtectedRoute>
+            </AdminProtectedRoute>
           }
         >
           <Route index element={<Dashboard />} />

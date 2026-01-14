@@ -11,6 +11,7 @@ import { useProblemStore } from "@/stores/problemStore";
 import { useSubmissionStore } from "@/stores/submissionStore";
 import { useAuthStore } from "@/stores/authStore";
 import ProblemDetails from "@/components/core/problem-view/ProblemDetails";
+import ArenaAssistant from "@/components/core/problem-view/ArenaAssistant";
 
 type RunTestcase = {
   stdin: string;
@@ -54,6 +55,7 @@ export default function ProblemView() {
   /* -------- mobile detection -------- */
   const [isMobile, setIsMobile] = useState(false);
   const [activeTab, setActiveTab] = useState<"problem" | "code">("problem");
+  const [isArenaOpen, setIsArenaOpen] = useState(false);
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
@@ -94,6 +96,10 @@ export default function ProblemView() {
       cancelPolling(); // ✅ stop polling when leaving page
     };
   }, []);
+
+  /* -------- code context for arena -------- */
+  const codeRef = useRef("");
+  const languageRef = useRef("c++"); // Default, will be updated by CodePanel
 
   /* -------- layout drag -------- */
   const onVerticalMouseDown = (e: React.MouseEvent) => {
@@ -142,7 +148,7 @@ export default function ProblemView() {
 
   if (loading)
     return (
-      <div className="fixed inset-0 flex flex-col items-center justify-center bg-[#0f172a] z-[100]">
+      <div className="fixed inset-0 flex flex-col items-center justify-center bg-[#0f172a] z-100">
         <div className="relative">
           <div className="h-16 w-16 rounded-full border-4 border-indigo-500/20 border-t-indigo-500 animate-spin" />
           <div className="absolute inset-0 h-16 w-16 rounded-full border-4 border-transparent border-b-indigo-400/30 animate-pulse" />
@@ -232,6 +238,10 @@ export default function ProblemView() {
                   preferences={problem.preferences}
                   isFullscreen={isFullscreen}
                   onToggleFullscreen={() => setIsFullscreen(!isFullscreen)}
+                  isArenaOpen={isArenaOpen}
+                  onToggleArena={() => setIsArenaOpen(!isArenaOpen)}
+                  onCodeChange={(c) => (codeRef.current = c)}
+                  onLanguageChange={(l) => (languageRef.current = l)}
                 />
               </div>
 
@@ -270,6 +280,19 @@ export default function ProblemView() {
           setShowSubmitModal(false);
           clearSubmission();
         }}
+      />
+
+      <ArenaAssistant
+        isOpen={isArenaOpen}
+        onClose={() => setIsArenaOpen(false)}
+        problemContext={{
+          title: problem.title,
+          description: problem.description,
+          difficulty: problem.difficulty,
+          tags: problem.tags,
+        }}
+        getCurrentCode={() => codeRef.current}
+        getCurrentLanguage={() => languageRef.current}
       />
     </div>
   );

@@ -19,6 +19,10 @@ interface Props {
   preferences: Preferences;
   isFullscreen: boolean;
   onToggleFullscreen: () => void;
+  isArenaOpen: boolean;
+  onToggleArena: () => void;
+  onCodeChange?: (code: string) => void;
+  onLanguageChange?: (language: string) => void;
 }
 
 export default function CodePanel({
@@ -31,6 +35,10 @@ export default function CodePanel({
   preferences,
   isFullscreen,
   onToggleFullscreen,
+  isArenaOpen,
+  onToggleArena,
+  onCodeChange,
+  onLanguageChange,
 }: Props) {
   const { token, user } = useAuthStore();
   const userId = user?.id || "guest";
@@ -67,6 +75,9 @@ export default function CodePanel({
     }
 
     editorRef.current?.setValue(codeRef.current);
+
+    // 🔹 Sync language with parent on load/change
+    onLanguageChange?.(language);
   }, [language, problemSlug, boilerplates, userId]);
 
   const applySettings = async () => {
@@ -104,6 +115,7 @@ export default function CodePanel({
         onLanguageChange={(l) => {
           setLanguage(l);
           setToLocalStorage(`pref:${userId}:language`, l);
+          onLanguageChange?.(l);
         }}
         onRun={() => onRun(codeRef.current, language)}
         onSubmit={() => onSubmit(codeRef.current, language)}
@@ -111,6 +123,8 @@ export default function CodePanel({
         submitCodeLoading={submitCodeLoading}
         isFullscreen={isFullscreen}
         onToggleFullscreen={onToggleFullscreen}
+        isArenaOpen={isArenaOpen}
+        onToggleArena={onToggleArena}
         onToggleSettings={() => setShowSettings(!showSettings)}
         onBack={() => {
           if (isFullscreen) onToggleFullscreen();
@@ -161,11 +175,13 @@ export default function CodePanel({
           editorRef.current = editor;
           editor.updateOptions({ fontSize });
           editor.setValue(codeRef.current);
+          onCodeChange?.(codeRef.current);
         }}
         onChange={(v) => {
           const value = v || "";
           codeRef.current = value;
           setToLocalStorage(`code:${userId}:${problemSlug}:${language}`, value);
+          onCodeChange?.(value);
         }}
         options={{
           minimap: { enabled: false },
