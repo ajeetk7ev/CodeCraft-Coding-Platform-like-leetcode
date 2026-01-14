@@ -36,63 +36,69 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          debug: true
+          envs: VPS_PATH,MONGO_URI,PORT,JWT_SECRET,JUDGE0_API_URL,JUDGE0_RAPIDAPI_KEY,JUDGE0_RAPIDAPI_HOST,JUDGE0_URL,REDIS_HOST,REDIS_PORT,REDIS_PASSWORD,CLOUDINARY_CLOUD_NAME,CLOUDINARY_API_KEY,CLOUDINARY_API_SECRET,OPENROUTER_API_KEY,VITE_API_URL
           script: |
             set -e
+
+            # ===============================
+            # 🔥 LOAD NVM (CRITICAL)
+            # ===============================
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+            nvm use 24.12.0
 
             echo "🚀 Starting secure deployment"
 
             # ===============================
-            # 📁 NAVIGATE & UPDATE
+            # 📁 PROJECT ROOT
             # ===============================
-            cd "$VPS_PATH" || exit 1
-            git pull origin main
+            cd "$VPS_PATH"
 
-            # ===============================
-            # 🌐 NODE (NVM)
-            # ===============================
-            export NVM_DIR="$HOME/.nvm"
-            [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
-            nvm use 24.12.0 || nvm install 24.12.0
+            echo "📥 Pulling latest code"
+            git pull origin main
 
             # ===============================
             # 🔐 BACKEND ENV
             # ===============================
+            echo "🔐 Creating backend .env"
             cat > backend/.env <<EOF
-            MONGO_URI=$MONGO_URI
-            PORT=$PORT
-            JWT_SECRET=$JWT_SECRET
-            JUDGE0_API_URL=$JUDGE0_API_URL
-            JUDGE0_RAPIDAPI_KEY=$JUDGE0_RAPIDAPI_KEY
-            JUDGE0_RAPIDAPI_HOST=$JUDGE0_RAPIDAPI_HOST
-            JUDGE0_URL=$JUDGE0_URL
-            REDIS_HOST=$REDIS_HOST
-            REDIS_PORT=$REDIS_PORT
-            REDIS_PASSWORD=$REDIS_PASSWORD
-            CLOUDINARY_CLOUD_NAME=$CLOUDINARY_CLOUD_NAME
-            CLOUDINARY_API_KEY=$CLOUDINARY_API_KEY
-            CLOUDINARY_API_SECRET=$CLOUDINARY_API_SECRET
-            OPENROUTER_API_KEY=$OPENROUTER_API_KEY
-            EOF
+MONGO_URI=$MONGO_URI
+PORT=$PORT
+JWT_SECRET=$JWT_SECRET
+JUDGE0_API_URL=$JUDGE0_API_URL
+JUDGE0_RAPIDAPI_KEY=$JUDGE0_RAPIDAPI_KEY
+JUDGE0_RAPIDAPI_HOST=$JUDGE0_RAPIDAPI_HOST
+JUDGE0_URL=$JUDGE0_URL
+REDIS_HOST=$REDIS_HOST
+REDIS_PORT=$REDIS_PORT
+REDIS_PASSWORD=$REDIS_PASSWORD
+CLOUDINARY_CLOUD_NAME=$CLOUDINARY_CLOUD_NAME
+CLOUDINARY_API_KEY=$CLOUDINARY_API_KEY
+CLOUDINARY_API_SECRET=$CLOUDINARY_API_SECRET
+OPENROUTER_API_KEY=$OPENROUTER_API_KEY
+EOF
 
             # ===============================
-            # 🎨 FRONTEND ENV (VITE)
+            # 🔐 FRONTEND ENV
             # ===============================
-            cat > frontend/.env.production <<EOF
-            VITE_API_URL=$VITE_API_URL
-            EOF
+            echo "🔐 Creating frontend .env"
+            cat > frontend/.env <<EOF
+VITE_API_URL=$VITE_API_URL
+EOF
 
             # ===============================
-            # 🔧 BACKEND
+            # 🔧 BACKEND BUILD & PM2
             # ===============================
+            echo "🔧 Backend build & restart"
             cd backend
             npm ci
             npm run build
             pm2 restart codearena-backend --update-env || pm2 start dist/server.js --name codearena-backend
 
             # ===============================
-            # 🎨 FRONTEND
+            # 🎨 FRONTEND BUILD & DEPLOY
             # ===============================
+            echo "🎨 Frontend build & deploy"
             cd ../frontend
             npm ci
             npm run build
@@ -102,6 +108,10 @@ jobs:
             sudo chown -R www-data:www-data /var/www/codearena
             sudo chmod -R 755 /var/www/codearena
 
+            # ===============================
+            # 🔁 NGINX RELOAD
+            # ===============================
+            echo "🔁 Reload nginx"
             sudo nginx -t
             sudo systemctl reload nginx
 
