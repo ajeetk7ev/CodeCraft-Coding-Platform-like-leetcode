@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 
 export default function Hero() {
   return (
-    <section className="relative h-screen flex items-center justify-center bg-gray-950 text-gray-100 overflow-hidden pt-20">
+    <section className="relative min-h-screen flex items-center justify-center bg-gray-950 text-gray-100 overflow-hidden pt-20">
       {/* Background Elements */}
       <DotBackground />
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-gray-950/50 to-gray-950 pointer-events-none" />
@@ -20,7 +20,7 @@ export default function Hero() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gray-900/50 border border-gray-800 text-sm text-gray-400 mb-6 backdrop-blur-sm">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gray-900/50 border border-gray-800 text-sm text-gray-400 mb-4 backdrop-blur-sm">
             <span className="flex h-2 w-2 rounded-full bg-green-500 animate-pulse" />
             Join 10,000+ developers coding daily
           </div>
@@ -30,7 +30,7 @@ export default function Hero() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.1 }}
-          className="text-5xl md:text-7xl font-extrabold tracking-tight leading-tight mb-6"
+          className="text-5xl md:text-7xl font-extrabold tracking-tight leading-tight mb-4"
         >
           Master Data Structures
           <br />
@@ -43,7 +43,7 @@ export default function Hero() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
-          className="h-12 md:h-16 mb-6 flex items-center justify-center"
+          className="h-12 md:h-16 mb-4 flex items-center justify-center"
         >
           <span className="text-2xl md:text-4xl font-bold text-gray-300 mr-2">
             Learn to
@@ -57,7 +57,7 @@ export default function Hero() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.3 }}
-          className="max-w-2xl mx-auto text-lg md:text-xl text-gray-400 mb-10 leading-relaxed"
+          className="max-w-2xl mx-auto text-lg md:text-xl text-gray-400 mb-8 leading-relaxed"
         >
           The ultimate platform to practice coding problems, compete in contests,
           and prepare for technical interviews at top tech companies.
@@ -67,7 +67,7 @@ export default function Hero() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.4 }}
-          className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16"
+          className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10"
         >
           <Button
             asChild
@@ -94,7 +94,7 @@ export default function Hero() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.5 }}
-          className="grid grid-cols-2 md:grid-cols-3 gap-4 max-w-3xl mx-auto text-gray-400 text-sm"
+          className="grid grid-cols-2 md:grid-cols-3 gap-4 max-w-3xl mx-auto text-gray-400 text-sm mb-8"
         >
           <div className="flex items-center justify-center gap-2 p-3 rounded-lg bg-gray-900/30 border border-gray-800/50">
             <Code className="h-5 w-5 text-indigo-400" />
