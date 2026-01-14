@@ -33,7 +33,8 @@ jobs:
             # ===============================
             cd ${{ secrets.VPS_PATH }}
             echo "📥 Pulling latest code"
-            git pull origin main
+            git pull origin
+            git reset --hard origin/main
             # ===============================
             # 🔐 BACKEND ENV
             # ===============================
