@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 
 export default function Hero() {
   return (
-    <section className="relative min-h-screen flex items-center justify-center bg-gray-950 text-gray-100 overflow-hidden pt-20">
+    <section className="relative min-h-screen flex items-center justify-center bg-gray-950 text-gray-100 overflow-hidden pt-4 sm:pt-24">
       {/* Background Elements */}
       <DotBackground />
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-gray-950/50 to-gray-950 pointer-events-none" />
@@ -30,7 +30,7 @@ export default function Hero() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.1 }}
-          className="text-5xl md:text-7xl font-extrabold tracking-tight leading-tight mb-4"
+          className="text-5xl md:text-7xl font-extrabold tracking-tight leading-tight mb-8"
         >
           Master Data Structures
           <br />
@@ -67,7 +67,7 @@ export default function Hero() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.4 }}
-          className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10"
+          className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16"
         >
           <Button
             asChild
@@ -94,7 +94,7 @@ export default function Hero() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.5 }}
-          className="grid grid-cols-2 md:grid-cols-3 gap-4 max-w-3xl mx-auto text-gray-400 text-sm mb-8"
+          className="grid grid-cols-2 md:grid-cols-3 gap-4 max-w-3xl mx-auto text-gray-400 text-sm pb-8 sm:mb-2"
         >
           <div className="flex items-center justify-center gap-2 p-3 rounded-lg bg-gray-900/30 border border-gray-800/50">
             <Code className="h-5 w-5 text-indigo-400" />

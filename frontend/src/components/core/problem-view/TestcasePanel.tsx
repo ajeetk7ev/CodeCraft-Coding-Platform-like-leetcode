@@ -96,7 +96,7 @@ export default function TestcasePanel({
   const overallVerdict = result?.verdict || (isRunResult && result.results.every((r: any) => r.verdict === "ACCEPTED") ? "ACCEPTED" : "FAILED");
 
   return (
-    <div className="flex-1 min-h-0 bg-[#0f172a] flex flex-col text-sm overflow-hidden">
+    <div className="flex-1 z-60 min-h-0 bg-[#0f172a] flex flex-col text-sm overflow-hidden">
       {/* Tabs */}
       <div className="flex items-center justify-between px-4 border-b border-[#1e293b] bg-[#1e293b] h-12 shrink-0">
         <div className="flex gap-6 h-full">
