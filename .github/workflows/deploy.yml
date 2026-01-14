@@ -58,7 +58,7 @@ jobs:
             # ===============================
             # 🔐 BACKEND ENV
             # ===============================
-            cat > backend/.env <<'EOF'
+            cat > backend/.env <<EOF
             MONGO_URI=$MONGO_URI
             PORT=$PORT
             JWT_SECRET=$JWT_SECRET
@@ -78,7 +78,7 @@ jobs:
             # ===============================
             # 🎨 FRONTEND ENV (VITE)
             # ===============================
-            cat > frontend/.env.production <<'EOF'
+            cat > frontend/.env.production <<EOF
             VITE_API_URL=$VITE_API_URL
             EOF
 
