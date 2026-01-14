@@ -14,105 +14,76 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Deploy to VPS via SSH
-        uses: appleboy/ssh-action@v1.0.3
-        env:
-          VPS_PATH: ${{ secrets.VPS_PATH }}
-          MONGO_URI: ${{ secrets.MONGO_URI }}
-          PORT: ${{ secrets.PORT }}
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
-          JUDGE0_API_URL: ${{ secrets.JUDGE0_API_URL }}
-          JUDGE0_RAPIDAPI_KEY: ${{ secrets.JUDGE0_RAPIDAPI_KEY }}
-          JUDGE0_RAPIDAPI_HOST: ${{ secrets.JUDGE0_RAPIDAPI_HOST }}
-          JUDGE0_URL: ${{ secrets.JUDGE0_URL }}
-          REDIS_HOST: ${{ secrets.REDIS_HOST }}
-          REDIS_PORT: ${{ secrets.REDIS_PORT }}
-          REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
-          CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
-          CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
-          CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
-          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+        uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          envs: VPS_PATH,MONGO_URI,PORT,JWT_SECRET,JUDGE0_API_URL,JUDGE0_RAPIDAPI_KEY,JUDGE0_RAPIDAPI_HOST,JUDGE0_URL,REDIS_HOST,REDIS_PORT,REDIS_PASSWORD,CLOUDINARY_CLOUD_NAME,CLOUDINARY_API_KEY,CLOUDINARY_API_SECRET,OPENROUTER_API_KEY,VITE_API_URL
           script: |
             set -e
-
             # ===============================
             # 🔥 LOAD NVM (CRITICAL)
             # ===============================
             export NVM_DIR="$HOME/.nvm"
             [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
             nvm use 24.12.0
-
             echo "🚀 Starting secure deployment"
-
             # ===============================
             # 📁 PROJECT ROOT
             # ===============================
-            cd "$VPS_PATH"
-
+            cd ${{ secrets.VPS_PATH }}
             echo "📥 Pulling latest code"
             git pull origin main
-
             # ===============================
             # 🔐 BACKEND ENV
             # ===============================
             echo "🔐 Creating backend .env"
             cat > backend/.env <<EOF
-MONGO_URI=$MONGO_URI
-PORT=$PORT
-JWT_SECRET=$JWT_SECRET
-JUDGE0_API_URL=$JUDGE0_API_URL
-JUDGE0_RAPIDAPI_KEY=$JUDGE0_RAPIDAPI_KEY
-JUDGE0_RAPIDAPI_HOST=$JUDGE0_RAPIDAPI_HOST
-JUDGE0_URL=$JUDGE0_URL
-REDIS_HOST=$REDIS_HOST
-REDIS_PORT=$REDIS_PORT
-REDIS_PASSWORD=$REDIS_PASSWORD
-CLOUDINARY_CLOUD_NAME=$CLOUDINARY_CLOUD_NAME
-CLOUDINARY_API_KEY=$CLOUDINARY_API_KEY
-CLOUDINARY_API_SECRET=$CLOUDINARY_API_SECRET
-OPENROUTER_API_KEY=$OPENROUTER_API_KEY
-EOF
-
+            MONGO_URI=${{ secrets.MONGO_URI }}
+            PORT=${{ secrets.PORT }}
+            JWT_SECRET=${{ secrets.JWT_SECRET }}
+            JUDGE0_API_URL=${{ secrets.JUDGE0_API_URL }}
+            JUDGE0_RAPIDAPI_KEY=${{ secrets.JUDGE0_RAPIDAPI_KEY }}
+            JUDGE0_RAPIDAPI_HOST=${{ secrets.JUDGE0_RAPIDAPI_HOST }}
+            JUDGE0_URL=${{ secrets.JUDGE0_URL }}
+            REDIS_HOST=${{ secrets.REDIS_HOST }}
+            REDIS_PORT=${{ secrets.REDIS_PORT }}
+            REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
+            CLOUDINARY_CLOUD_NAME=${{ secrets.CLOUDINARY_CLOUD_NAME }}
+            CLOUDINARY_API_KEY=${{ secrets.CLOUDINARY_API_KEY }}
+            CLOUDINARY_API_SECRET=${{ secrets.CLOUDINARY_API_SECRET }}
+            OPENROUTER_API_KEY=${{ secrets.OPENROUTER_API_KEY }}
+            EOF
             # ===============================
             # 🔐 FRONTEND ENV
             # ===============================
-            echo "🔐 Creating frontend .env"
+            echo "🔐 Creating frontend .env.production"
             cat > frontend/.env <<EOF
-VITE_API_URL=$VITE_API_URL
-EOF
-
+            VITE_API_URL=${{ secrets.VITE_API_URL }}
+            EOF
             # ===============================
             # 🔧 BACKEND BUILD & PM2
             # ===============================
             echo "🔧 Backend build & restart"
             cd backend
-            npm ci
+            npm install
             npm run build
             pm2 restart codearena-backend --update-env || pm2 start dist/server.js --name codearena-backend
-
             # ===============================
             # 🎨 FRONTEND BUILD & DEPLOY
             # ===============================
             echo "🎨 Frontend build & deploy"
             cd ../frontend
-            npm ci
+            npm install
             npm run build
-
             sudo rm -rf /var/www/codearena/*
             sudo cp -r dist/* /var/www/codearena/
             sudo chown -R www-data:www-data /var/www/codearena
             sudo chmod -R 755 /var/www/codearena
-
             # ===============================
             # 🔁 NGINX RELOAD
             # ===============================
             echo "🔁 Reload nginx"
             sudo nginx -t
             sudo systemctl reload nginx
-
-            echo "✅ Deployment completed successfully"
+            echo "✅ Secure deployment completed successfully"
