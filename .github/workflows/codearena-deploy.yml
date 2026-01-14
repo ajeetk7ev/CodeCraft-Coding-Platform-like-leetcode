@@ -21,24 +21,27 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
             set -e
+
             # ===============================
-            # 🔥 LOAD NVM (CRITICAL)
+            # 🔥 LOAD NVM
             # ===============================
             export NVM_DIR="$HOME/.nvm"
             [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
             nvm use 24.12.0
+
             echo "🚀 Starting secure deployment"
+
             # ===============================
-            # 📁 PROJECT ROOT
+            # 📁 PROJECT ROOT (FORCE SYNC)
             # ===============================
             cd ${{ secrets.VPS_PATH }}
-            echo "📥 Pulling latest code"
-            git pull origin
+            git fetch origin
             git reset --hard origin/main
+            git clean -fd
+
             # ===============================
             # 🔐 BACKEND ENV
             # ===============================
-            echo "🔐 Creating backend .env"
             cat > backend/.env <<EOF
             MONGO_URI=${{ secrets.MONGO_URI }}
             PORT=${{ secrets.PORT }}
@@ -55,36 +58,37 @@ jobs:
             CLOUDINARY_API_SECRET=${{ secrets.CLOUDINARY_API_SECRET }}
             OPENROUTER_API_KEY=${{ secrets.OPENROUTER_API_KEY }}
             EOF
+
             # ===============================
             # 🔐 FRONTEND ENV
             # ===============================
-            echo "🔐 Creating frontend .env.production"
-            cat > frontend/.env <<EOF
+            cat > frontend/.env.production <<EOF
             VITE_API_URL=${{ secrets.VITE_API_URL }}
             EOF
+
             # ===============================
             # 🔧 BACKEND BUILD & PM2
             # ===============================
-            echo "🔧 Backend build & restart"
             cd backend
-            npm install
+            npm ci
             npm run build
             pm2 restart codearena-backend --update-env || pm2 start dist/server.js --name codearena-backend
+
             # ===============================
             # 🎨 FRONTEND BUILD & DEPLOY
             # ===============================
-            echo "🎨 Frontend build & deploy"
             cd ../frontend
-            npm install
+            npm ci
             npm run build
             sudo rm -rf /var/www/codearena/*
             sudo cp -r dist/* /var/www/codearena/
             sudo chown -R www-data:www-data /var/www/codearena
             sudo chmod -R 755 /var/www/codearena
+
             # ===============================
-            # 🔁 NGINX RELOAD
+            # 🔁 NGINX
             # ===============================
-            echo "🔁 Reload nginx"
             sudo nginx -t
             sudo systemctl reload nginx
-            echo "✅ Secure deployment completed successfully"
+
+            echo "✅ Deployment completed"
