@@ -6,6 +6,7 @@ import {
   updateProblem,
   deleteProblem,
   getAdminProblems,
+  getProblemForAdmin,
   getProblemFilters
 } from "../controllers/problem.controller";
 import { protect, optionalProtect } from "../middlewares/auth.middleware";
@@ -13,6 +14,7 @@ import { isAdmin } from "../middlewares/role.middleware";
 
 const router = express.Router();
 router.get("/admin", protect, isAdmin, getAdminProblems);
+router.get("/admin/:id", protect, isAdmin, getProblemForAdmin);
 // Public routes
 router.get("/param-filters", getProblemFilters);
 router.get("/", optionalProtect, getProblems);

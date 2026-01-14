@@ -461,6 +461,73 @@ export const getProblem = async (req: Request, res: Response) => {
   }
 };
 
+// READ ONE FOR ADMIN - Get a single problem by ID with all data including hidden testcases and full templates
+export const getProblemForAdmin = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    // ================= DB FETCH =================
+    const problem = await Problem.findById(id)
+      .select("-__v")
+      .populate("createdBy", "username email");
+
+    if (!problem) {
+      return res.status(404).json({
+        success: false,
+        message: "Problem not found",
+      });
+    }
+
+    const [
+      description,
+      examples,
+      testcases,
+      boilerplates,
+      tags,
+      companyTags,
+      stats,
+    ] = await Promise.all([
+      ProblemDescription.findOne({ problem: problem._id }).select("-__v"),
+      ProblemExample.find({ problem: problem._id }).select(
+        "-__v -problem"
+      ),
+      // Include ALL testcases (including hidden ones)
+      ProblemTestcase.find({ problem: problem._id }).select(
+        "-__v -problem"
+      ),
+      // Include fullCodeTemplate for admin
+      ProblemBoilerplate.find({ problem: problem._id }).select(
+        "-__v -problem"
+      ),
+      ProblemTag.find({ problem: problem._id }).select("-__v -problem"),
+      ProblemCompanyTag.find({ problem: problem._id }).select("-__v -problem"),
+      ProblemStats.findOne({ problem: problem._id }).select("-__v -problem"),
+    ]);
+
+    const result = {
+      ...problem.toObject(),
+      description: description?.description || "",
+      constraints: description?.constraints || [],
+      examples: examples || [],
+      testcases: testcases || [],
+      boilerplates: boilerplates || [],
+      tags: tags.map(t => t.tag),
+      companyTags: companyTags.map(ct => ct.company),
+      stats: stats || { totalSubmissions: 0, acceptedSubmissions: 0 },
+    };
+
+    return res.json({
+      success: true,
+      data: result,
+    });
+  } catch (error) {
+    console.error("❌ Error in getProblemForAdmin", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
+  }
+};
 
 
 // UPDATE - Update a problem and all related data

@@ -196,7 +196,8 @@ export default function ProblemManagement() {
   const openEdit = async (problem: Problem) => {
     try {
       setIsLoading(true);
-      const res = await axios.get(`${API_URL}/problems/${problem.slug}`, authHeaders);
+      // Use admin endpoint to get complete data including hidden test cases and full templates
+      const res = await axios.get(`${API_URL}/problems/admin/${problem._id}`, authHeaders);
       setEditing(problem);
       setForm(res.data.data);
       setActiveTab("basic");
