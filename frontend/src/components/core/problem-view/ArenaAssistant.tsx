@@ -244,7 +244,7 @@ export default function ArenaAssistant({ isOpen, onClose, problemContext, getCur
                             <h3 className="font-semibold text-indigo-100">Arena Assistant</h3>
                         </div>
                         <div className="flex items-center gap-2" onPointerDown={(e) => e.stopPropagation()}>
-                            {messages.length > 0 && (
+                            {(messages.length > 0 && !isLoading) && (
                                 <Button
                                     variant="ghost"
                                     size="icon"

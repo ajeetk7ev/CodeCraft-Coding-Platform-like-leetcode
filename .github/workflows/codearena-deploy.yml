@@ -63,7 +63,7 @@ jobs:
             # 🔐 FRONTEND ENV
             # ===============================
             cat > frontend/.env.production <<EOF
-            VITE_API_URL=${{ secrets.VITE_API_URL }}
+            VITE_API_URL=${{ secrets.VITE_API_URL }}     
             EOF
 
             # ===============================
