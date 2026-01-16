@@ -37,7 +37,7 @@ jobs:
             cd ${{ secrets.VPS_PATH }}
             git fetch origin
             git reset --hard origin/main
-            git clean -fd
+            git clean -fd -e frontend/.env.production -e backend/.env
 
             # ===============================
             # 🔐 BACKEND ENV
