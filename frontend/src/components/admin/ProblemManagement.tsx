@@ -113,6 +113,7 @@ export default function ProblemManagement() {
   const [editing, setEditing] = useState<Problem | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("basic");
+  const [errors, setErrors] = useState<Record<string, string[]>>({});
 
   const [form, setForm] = useState<ProblemForm>({
     title: "",
@@ -184,6 +185,7 @@ export default function ProblemManagement() {
       ],
       testcases: [],
     });
+    setErrors({});
     setActiveTab("basic");
   };
 
@@ -196,6 +198,7 @@ export default function ProblemManagement() {
   const openEdit = async (problem: Problem) => {
     try {
       setIsLoading(true);
+      setErrors({});
       // Use admin endpoint to get complete data including hidden test cases and full templates
       const res = await axios.get(`${API_URL}/problems/admin/${problem._id}`, authHeaders);
       setEditing(problem);
@@ -211,6 +214,7 @@ export default function ProblemManagement() {
 
   const submitProblem = async () => {
     setIsLoading(true);
+    setErrors({});
     try {
       if (editing) {
         await axios.put(`${API_URL}/problems/${editing._id}`, form, authHeaders);
@@ -221,8 +225,14 @@ export default function ProblemManagement() {
       }
       setFormOpen(false);
       fetchProblems();
-    } catch {
-      toast.error(editing ? "Failed to update problem" : "Failed to create problem");
+    } catch (error: any) {
+      console.error("Submit error:", error);
+      if (error.response?.data?.errors) {
+        setErrors(error.response.data.errors);
+        toast.error("Please check the form for errors");
+      } else {
+        toast.error(error.response?.data?.message || (editing ? "Failed to update problem" : "Failed to create problem"));
+      }
     } finally {
       setIsLoading(false);
     }
@@ -643,6 +653,9 @@ export default function ProblemManagement() {
                       placeholder="e.g. Reverse Linked List"
                       className="bg-slate-900 border-slate-800 focus:ring-1 ring-indigo-500 h-11 rounded-xl text-slate-100"
                     />
+                    {errors.title && (
+                      <p className="text-xs text-rose-400 font-medium">{errors.title[0]}</p>
+                    )}
                   </div>
 
                   <div className="space-y-2">
@@ -659,6 +672,9 @@ export default function ProblemManagement() {
                       <option value="medium">Medium</option>
                       <option value="hard">Hard</option>
                     </select>
+                    {errors.difficulty && (
+                      <p className="text-xs text-rose-400 font-medium">{errors.difficulty[0]}</p>
+                    )}
                   </div>
                 </div>
 
@@ -673,6 +689,9 @@ export default function ProblemManagement() {
                     value={form.description}
                     onChange={(e) => setForm({ ...form, description: e.target.value })}
                   />
+                  {errors.description && (
+                    <p className="text-xs text-rose-400 font-medium">{errors.description[0]}</p>
+                  )}
                   <p className="text-[10px] text-slate-500 italic">Formatting is important for user readability.</p>
                 </div>
               </TabsContent>
@@ -685,6 +704,9 @@ export default function ProblemManagement() {
                   onChange={(v) => setForm({ ...form, constraints: v })}
                   placeholder="Add constraint (e.g. 1 <= n <= 10^5)"
                 />
+                {errors.constraints && (
+                  <p className="text-xs text-rose-400 font-medium">{errors.constraints[0]}</p>
+                )}
 
                 <div className="space-y-8">
                   <TagInput
@@ -694,6 +716,9 @@ export default function ProblemManagement() {
                     onChange={(v) => setForm({ ...form, tags: v })}
                     placeholder="Add tag (e.g. Array, Dynamic Programming)"
                   />
+                  {errors.tags && (
+                    <p className="text-xs text-rose-400 font-medium">{errors.tags[0]}</p>
+                  )}
 
                   <TagInput
                     label="Company Tags"
@@ -702,6 +727,9 @@ export default function ProblemManagement() {
                     onChange={(v) => setForm({ ...form, companyTags: v })}
                     placeholder="Add company (e.g. Google, Meta)"
                   />
+                  {errors.companyTags && (
+                    <p className="text-xs text-rose-400 font-medium">{errors.companyTags[0]}</p>
+                  )}
                 </div>
               </TabsContent>
 
@@ -710,6 +738,9 @@ export default function ProblemManagement() {
                   <div>
                     <h3 className="text-lg font-bold text-slate-200">Execution Templates</h3>
                     <p className="text-sm text-slate-500">Define the starter code for each supported language</p>
+                    {errors.boilerplates && (
+                      <p className="text-xs text-rose-400 font-medium mt-1">{errors.boilerplates[0]}</p>
+                    )}
                   </div>
                   <Button
                     size="sm"
@@ -829,6 +860,9 @@ export default function ProblemManagement() {
                   <div>
                     <h3 className="text-lg font-bold text-slate-200">Public Examples</h3>
                     <p className="text-sm text-slate-500">Provide clear usage examples for users</p>
+                    {errors.examples && (
+                      <p className="text-xs text-rose-400 font-medium mt-1">{errors.examples[0]}</p>
+                    )}
                   </div>
                   <Button
                     size="sm"
@@ -923,6 +957,9 @@ export default function ProblemManagement() {
                   <div>
                     <h3 className="text-lg font-bold text-slate-200">Judge Scenarios</h3>
                     <p className="text-sm text-slate-500">Comprehensive test suite for correctness verification</p>
+                    {errors.testcases && (
+                      <p className="text-xs text-rose-400 font-medium mt-1">{errors.testcases[0]}</p>
+                    )}
                   </div>
                   <Button
                     size="sm"
