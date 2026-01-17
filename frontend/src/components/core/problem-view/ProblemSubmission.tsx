@@ -4,6 +4,7 @@ import Editor from "@monaco-editor/react";
 import { API_URL } from "@/utils/api";
 import { useAuthStore } from "@/stores/authStore";
 import toast from "react-hot-toast";
+import { copyToClipboard } from "@/utils/clipboard";
 
 
 
@@ -174,10 +175,10 @@ export default function ProblemSubmission({ problemId }: ProblemSubmissionProps)
                 <button
                   onClick={async () => {
                     if (!selected?.code) return;
-                    try {
-                      await navigator.clipboard.writeText(selected.code);
+                    const success = await copyToClipboard(selected.code);
+                    if (success) {
                       toast.success("Code copied!");
-                    } catch (err) {
+                    } else {
                       toast.error("Failed to copy");
                     }
                   }}

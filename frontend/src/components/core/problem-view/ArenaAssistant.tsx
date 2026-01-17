@@ -16,6 +16,7 @@ import { motion, AnimatePresence, useDragControls } from "framer-motion";
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { useAuthStore } from "@/stores/authStore";
+import { copyToClipboard } from "@/utils/clipboard";
 
 interface Message {
     role: "user" | "assistant";
@@ -38,10 +39,12 @@ interface Props {
 const CodeBlock = ({ language, children }: { language: string, children: string }) => {
     const [copied, setCopied] = useState(false);
 
-    const handleCopy = () => {
-        navigator.clipboard.writeText(children);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
+    const handleCopy = async () => {
+        const success = await copyToClipboard(children);
+        if (success) {
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        }
     };
 
     return (
