@@ -35,8 +35,9 @@ export default function ProfileStats() {
               <div className="p-3 bg-white/20 backdrop-blur-md rounded-2xl border border-white/20">
                 <Trophy className="h-7 w-7 text-white" />
               </div>
-              <div className="px-4 py-1.5 rounded-full bg-white/10 border border-white/10 backdrop-blur-sm">
-                <span className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Global Influence</span>
+              <div className="px-4 py-1.5 rounded-full bg-white/10 border border-white/10 backdrop-blur-sm flex items-center gap-2">
+                <BrainCircuit size={14} className="text-indigo-200" />
+                <span className="text-[10px] font-black text-white uppercase tracking-[0.2em]">{profile.user.rating || 1500} Rating</span>
               </div>
             </div>
 

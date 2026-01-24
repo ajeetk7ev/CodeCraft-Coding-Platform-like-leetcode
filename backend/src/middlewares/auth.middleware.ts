@@ -1,13 +1,16 @@
 import { Request, Response, NextFunction } from "express";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import { User } from "../models/user/User";
+import { logger } from "../utils/logger";
+import { AppError } from "../utils/AppError";
+import { catchAsync } from "../utils/catchAsync";
 
 interface DecodedToken extends JwtPayload {
   id: string;
 }
 
-export const protect = async (req: Request, res: Response, next: NextFunction) => {
-  try {
+export const protect = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
     let token;
 
     if (
@@ -18,12 +21,8 @@ export const protect = async (req: Request, res: Response, next: NextFunction) =
     }
 
     if (!token) {
-      return res.status(401).json({
-        success: false,
-        message: "Not authorized, token missing",
-      });
+      return next(new AppError("Not authorized, token missing", 401));
     }
-
 
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as DecodedToken;
@@ -31,27 +30,18 @@ export const protect = async (req: Request, res: Response, next: NextFunction) =
     // Fetch user and attach to req
     const user = await User.findById(decoded.id).select("-password");
     if (!user) {
-      return res.status(401).json({
-        success: false,
-        message: "User not found",
-      });
+      return next(new AppError("User not found", 401));
     }
 
     // Attach user to req for further usage
     (req as any).user = user;
 
     next();
-  } catch (error) {
-    console.log("Error in protect middleware ", error);
-    return res.status(500).json({
-      success: false,
-      message: "Server Error",
-    });
-  }
-};
+  },
+);
 
-export const optionalProtect = async (req: Request, res: Response, next: NextFunction) => {
-  try {
+export const optionalProtect = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
     let token;
 
     if (
@@ -65,24 +55,23 @@ export const optionalProtect = async (req: Request, res: Response, next: NextFun
       return next();
     }
 
-
     // Verify token
     try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET!) as DecodedToken;
+      const decoded = jwt.verify(
+        token,
+        process.env.JWT_SECRET!,
+      ) as DecodedToken;
       const user = await User.findById(decoded.id).select("-password");
       if (user) {
         (req as any).user = user;
       } else {
-        console.log("User not found for decoded ID:", decoded.id);
+        logger.error(`User not found for decoded ID: ${decoded.id}`);
       }
     } catch (err) {
       // Token invalid or expired, just proceed as guest
-      console.log("Optional auth token invalid:", err);
+      logger.error("Optional auth token invalid:", err);
     }
 
     next();
-  } catch (error) {
-    console.log("Error in optionalProtect middleware ", error);
-    next();
-  }
-};
+  },
+);

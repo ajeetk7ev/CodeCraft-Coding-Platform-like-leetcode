@@ -7,7 +7,8 @@ import {
   BarChart3,
   UserCircle,
   FolderCode,
-  Sliders
+  Sliders,
+  Trophy
 } from "lucide-react";
 import { useDashboardCollapsedStore } from "@/stores/dashboardCollapsedStore";
 import { useAuthStore } from "@/stores/authStore";
@@ -23,6 +24,7 @@ const Sidebar = () => {
     { to: "/admin/analytics", label: "Analytics", icon: BarChart3 },
     { to: "/admin/users", label: "User Control", icon: UserCircle },
     { to: "/admin/problems", label: "Challenges", icon: FolderCode },
+    { to: "/admin/contests", label: "Contests", icon: Trophy },
     { to: "/admin/settings", label: "System Config", icon: Sliders },
   ];
 

@@ -2,6 +2,7 @@ import ProfileSidebar from "@/components/core/profile/ProfileSidebar";
 import ProfileStats from "@/components/core/profile/ProfileStats";
 import ActivityHeatmap from "@/components/core/profile/ActivityHeatmap";
 import RecentSolved from "@/components/core/profile/RecentSolved";
+import RatingGraph from "@/components/core/profile/RatingGraph";
 import Navbar from "@/components/common/Navbar";
 import { useProfileStore } from "@/stores/profileStore";
 import { useEffect } from "react";
@@ -72,6 +73,7 @@ export default function Profile() {
         {/* RIGHT CONTENT */}
         <div className="flex-1 space-y-8 min-w-0">
           <ProfileStats />
+          <RatingGraph />
           <ActivityHeatmap submissions={profile.submissions} />
           <RecentSolved />
         </div>

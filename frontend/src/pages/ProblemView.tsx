@@ -6,6 +6,7 @@ import CodePanel from "@/components/core/problem-view/CodePanel";
 import TestcasePanel from "@/components/core/problem-view/TestcasePanel";
 import SubmitResultModal from "@/components/core/problem-view/SubmitResultModal";
 import { FileText, Code2 } from "lucide-react";
+import { toast } from "react-hot-toast";
 
 import { useProblemStore } from "@/stores/problemStore";
 import { useSubmissionStore } from "@/stores/submissionStore";
@@ -90,6 +91,15 @@ export default function ProblemView() {
       }
     }
   }, [submissionResult, fetchUser]);
+
+  /* -------- watch for submission errors (e.g. contest timing) -------- */
+  const submissionError = useSubmissionStore((state) => state.error);
+  useEffect(() => {
+    if (submissionError) {
+      toast.error(submissionError);
+      useSubmissionStore.getState().clear(); // Clear error after showing toast
+    }
+  }, [submissionError]);
 
   useEffect(() => {
     return () => {
@@ -232,9 +242,10 @@ export default function ProblemView() {
                   onRun={(code, language) =>
                     runCode({ slug, code, language, testcases: runTestcases })
                   }
-                  onSubmit={(code, language) =>
-                    submitCode({ problemId: problem._id, code, language })
-                  }
+                  onSubmit={(code, language) => {
+                    const contestId = new URLSearchParams(window.location.search).get("contest") || undefined;
+                    submitCode({ problemId: problem._id, code, language, contestId });
+                  }}
                   preferences={problem.preferences}
                   isFullscreen={isFullscreen}
                   onToggleFullscreen={() => setIsFullscreen(!isFullscreen)}

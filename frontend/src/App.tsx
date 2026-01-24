@@ -13,9 +13,14 @@ import Dashboard from "./pages/admin/Dashboard";
 import Analytics from "./pages/admin/Analytics";
 import Users from "./pages/admin/Users";
 import Settings from "./pages/admin/Settings";
+import ContestList from "./pages/admin/ContestList";
 import Leaderboard from "./pages/Leaderboard";
 import Contests from "./pages/Contests";
+import ContestDetail from "./pages/ContestDetail";
 import Discuss from "./pages/Discuss";
+import NewDiscussion from "./pages/NewDiscussion";
+import EditDiscussion from "./pages/EditDiscussion";
+import DiscussionDetail from "./pages/DiscussionDetail";
 import { useAuthStore } from "./stores/authStore";
 import ProtectedRoute from "./components/routing/ProtectedRoute";
 import PublicRoute from "./components/routing/PublicRoute";
@@ -36,7 +41,18 @@ function App() {
         <Route path="/problems" element={<Problems />} />
         <Route path="/problems/:slug" element={<ProblemView />} />
         <Route path="/contests" element={<Contests />} />
+        <Route
+          path="/contests/:id"
+          element={
+            <ProtectedRoute>
+              <ContestDetail />
+            </ProtectedRoute>
+          }
+        />
         <Route path="/discuss" element={<Discuss />} />
+        <Route path="/discuss/new" element={<ProtectedRoute><NewDiscussion /></ProtectedRoute>} />
+        <Route path="/discuss/edit/:id" element={<ProtectedRoute><EditDiscussion /></ProtectedRoute>} />
+        <Route path="/discuss/:id" element={<DiscussionDetail />} />
         <Route path="/leaderboard" element={<Leaderboard />} />
 
         {/* Auth Routes - Only accessible when NOT logged in */}
@@ -81,7 +97,9 @@ function App() {
           <Route path="analytics" element={<Analytics />} />
           <Route path="users" element={<Users />} />
           <Route path="problems" element={<ProblemsList />} />
+          <Route path="contests" element={<ContestList />} />
           <Route path="settings" element={<Settings />} />
+
         </Route>
 
         <Route path="*" element={<NotFound />} />

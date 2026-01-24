@@ -23,13 +23,10 @@ interface AuthState {
     fullName: string,
     username: string,
     email: string,
-    password: string
+    password: string,
   ) => Promise<AuthResponse>;
 
-  login: (
-    email: string,
-    password: string
-  ) => Promise<AuthResponse>;
+  login: (email: string, password: string) => Promise<AuthResponse>;
 
   loadUser: () => void;
   logout: () => void;
@@ -64,13 +61,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         password,
       });
 
-      const { user, token, message } = res.data;
-
-      setToLocalStorage("user", user);
-      setToLocalStorage("token", token);
-      set({ user, token });
-      // Set axios default headers
-      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+      const { message } = res.data;
 
       return { success: true, message };
     } catch (error: any) {

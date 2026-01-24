@@ -6,6 +6,8 @@ export interface IStats extends Document {
   easySolved: number;
   mediumSolved: number;
   hardSolved: number;
+  contestPoints: number;
+  rating: number;
   languagesUsed: string[];
 }
 
@@ -17,7 +19,8 @@ const statsSchema = new Schema<IStats>(
     easySolved: { type: Number, default: 0 },
     mediumSolved: { type: Number, default: 0 },
     hardSolved: { type: Number, default: 0 },
-
+    contestPoints: { type: Number, default: 0 },
+    rating: { type: Number, default: 1500 },
     languagesUsed: { type: [String], default: [] },
   },
   { timestamps: true }

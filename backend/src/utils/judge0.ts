@@ -1,23 +1,24 @@
 import axios from "axios";
+import { logger } from "./logger";
 import { SupportedLanguage } from "../models/submission/Language";
 import { Verdict } from "../models/submission/verdict";
 
 /**
  * Judge0 RapidAPI Integration
- * 
+ *
  * This module provides integration with Judge0 via RapidAPI for code execution.
- * 
+ *
  * Features:
  * - Single and batch code submission
  * - Automatic base64 encoding/decoding
  * - Result polling with timeout protection
  * - Support for multiple programming languages
- * 
+ *
  * Batch Submission API:
  * - submitBatchToJudge0(): Submit multiple test cases in one request
  * - getBatchJudge0Results(): Fetch results for multiple submissions
  * - pollBatchJudge0Results(): Poll until all submissions complete
- * 
+ *
  * Single Submission API (legacy):
  * - submitToJudge0(): Submit a single test case
  * - getJudge0Result(): Fetch a single result
@@ -100,11 +101,11 @@ export const submitToJudge0 = async (
   stdin?: string,
   expectedOutput?: string,
   cpuTimeLimit: number = 2,
-  memoryLimit: number = 128000 // 128MB in KB
+  memoryLimit: number = 128000, // 128MB in KB
 ): Promise<string> => {
   try {
     const languageId = LANGUAGE_ID_MAP[language];
-    console.log("language id", languageId);
+    logger.info(`language id: ${languageId}`);
     if (!languageId) {
       throw new Error(`Unsupported language: ${language}`);
     }
@@ -127,12 +128,12 @@ export const submitToJudge0 = async (
     const response = await axios.post<Judge0Response>(
       `${JUDGE0_API_URL}/submissions?base64_encoded=true&wait=false`,
       submission,
-      { headers: getHeaders() }
+      { headers: getHeaders() },
     );
 
     return response.data.token;
   } catch (error: any) {
-    console.error("Error submitting to Judge0:", error);
+    logger.error("Error submitting to Judge0:", error);
     throw new Error(`Failed to submit code to Judge0: ${error.message}`);
   }
 };
@@ -148,7 +149,7 @@ export const submitBatchToJudge0 = async (
     expectedOutput?: string;
     cpuTimeLimit?: number;
     memoryLimit?: number;
-  }>
+  }>,
 ): Promise<string[]> => {
   try {
     const batchSubmissions: Judge0Submission[] = submissions.map((sub) => {
@@ -179,17 +180,17 @@ export const submitBatchToJudge0 = async (
     const response = await axios.post<{ token: string }[]>(
       `${JUDGE0_API_URL}/submissions/batch?base64_encoded=true`,
       { submissions: batchSubmissions },
-      { headers: getHeaders() }
+      { headers: getHeaders() },
     );
 
     return response.data.map((res) => res.token);
   } catch (error: any) {
-    console.error("Error submitting batch to Judge0:");
+    logger.error("Error submitting batch to Judge0:");
     if (error.response) {
-      console.error("- Status:", error.response.status);
-      console.error("- Data:", JSON.stringify(error.response.data, null, 2));
+      logger.error(`- Status: ${error.response.status}`);
+      logger.error(`- Data: ${JSON.stringify(error.response.data, null, 2)}`);
     } else {
-      console.error("- Message:", error.message);
+      logger.error(`- Message: ${error.message}`);
     }
     throw new Error(`Failed to submit batch to Judge0: ${error.message}`);
   }
@@ -202,7 +203,7 @@ export const getJudge0Result = async (token: string): Promise<Judge0Result> => {
   try {
     const response = await axios.get<Judge0Result>(
       `${JUDGE0_API_URL}/submissions/${token}?base64_encoded=true`,
-      { headers: getHeaders() }
+      { headers: getHeaders() },
     );
 
     return {
@@ -213,7 +214,7 @@ export const getJudge0Result = async (token: string): Promise<Judge0Result> => {
       message: decodeBase64(response.data.message),
     };
   } catch (error: any) {
-    console.error("Error fetching Judge0 result:", error);
+    logger.error("Error fetching Judge0 result:", error);
     throw new Error(`Failed to fetch result from Judge0: ${error.message}`);
   }
 };
@@ -221,15 +222,18 @@ export const getJudge0Result = async (token: string): Promise<Judge0Result> => {
 /**
  * Get multiple results from Judge0 using tokens in batch
  */
-export const getBatchJudge0Results = async (tokens: string[]): Promise<Judge0Result[]> => {
+export const getBatchJudge0Results = async (
+  tokens: string[],
+): Promise<Judge0Result[]> => {
   try {
     const response = await axios.get<BatchJudge0Results>(
       `${JUDGE0_API_URL}/submissions/batch?tokens=${tokens.join(",")}&base64_encoded=true`,
-      { headers: getHeaders() }
+      { headers: getHeaders() },
     );
 
     // API might return { submissions: [...] }
-    const submissions = response.data.submissions || (response.data as unknown as Judge0Result[]);
+    const submissions =
+      response.data.submissions || (response.data as unknown as Judge0Result[]);
 
     return submissions.map((res) => ({
       ...res,
@@ -239,8 +243,10 @@ export const getBatchJudge0Results = async (tokens: string[]): Promise<Judge0Res
       message: decodeBase64(res.message),
     }));
   } catch (error: any) {
-    console.error("Error fetching batch Judge0 results:", error);
-    throw new Error(`Failed to fetch batch results from Judge0: ${error.message}`);
+    logger.error("Error fetching batch Judge0 results:", error);
+    throw new Error(
+      `Failed to fetch batch results from Judge0: ${error.message}`,
+    );
   }
 };
 
@@ -250,7 +256,7 @@ export const getBatchJudge0Results = async (tokens: string[]): Promise<Judge0Res
 export const pollJudge0Result = async (
   token: string,
   maxAttempts: number = 30,
-  delayMs: number = 1000
+  delayMs: number = 1000,
 ): Promise<Judge0Result> => {
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     const result = await getJudge0Result(token);
@@ -289,7 +295,7 @@ export const pollJudge0Result = async (
 export const pollBatchJudge0Results = async (
   tokens: string[],
   maxAttempts: number = 30,
-  delayMs: number = 1000
+  delayMs: number = 1000,
 ): Promise<Judge0Result[]> => {
   let pendingTokens = [...tokens];
   const resultsMap: Record<string, Judge0Result> = {};
@@ -328,7 +334,7 @@ export const pollBatchJudge0Results = async (
   }
 
   // Return results in the original order of tokens
-  return tokens.map(token => resultsMap[token]!);
+  return tokens.map((token) => resultsMap[token]!);
 };
 
 /**

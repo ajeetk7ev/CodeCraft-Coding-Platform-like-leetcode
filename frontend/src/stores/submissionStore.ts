@@ -100,7 +100,12 @@ export const useSubmissionStore = create<SubmissionState>((set, get) => ({
         ) {
           set({ submissionResult: submission });
           set({ pollTimeoutId: null });
-          set({submitCodeLoading:false})
+          set({ submitCodeLoading: false });
+
+          // Refetch user profile to update points and streaks if ACCEPTED
+          if (submission.verdict === "ACCEPTED") {
+            useAuthStore.getState().fetchUser();
+          }
           return;
         }
 
@@ -109,7 +114,7 @@ export const useSubmissionStore = create<SubmissionState>((set, get) => ({
             error: "Submission timed out",
             pollTimeoutId: null,
           });
-          set({submitCodeLoading:false});
+          set({ submitCodeLoading: false });
           return;
         }
 
@@ -123,7 +128,7 @@ export const useSubmissionStore = create<SubmissionState>((set, get) => ({
             err?.response?.data?.message || "Failed to fetch submission result",
           pollTimeoutId: null,
         });
-        set({submitCodeLoading:false})
+        set({ submitCodeLoading: false })
       }
     };
 

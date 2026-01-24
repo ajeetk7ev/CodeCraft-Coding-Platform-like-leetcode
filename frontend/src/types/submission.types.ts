@@ -4,16 +4,17 @@ export type TestcaseInput = {
 };
 
 export type RunRequest = {
-  slug:string;
+  slug: string;
   code: string;
   language: string;
   testcases: TestcaseInput[];
 };
 
 export type SubmitRequest = {
-  problemId:string;
-  code:string;
-  language:string;
+  problemId: string;
+  code: string;
+  language: string;
+  contestId?: string;
 }
 
 export type TestcaseResult = {

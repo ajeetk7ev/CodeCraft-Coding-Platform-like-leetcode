@@ -1,29 +1,28 @@
 import { Request, Response } from "express";
+import { logger } from "../utils/logger";
+import { catchAsync } from "../utils/catchAsync";
 import { OpenRouter } from "@openrouter/sdk";
 import dotenv from "dotenv";
 
 dotenv.config();
 
-
 const openrouter = new OpenRouter({
-    apiKey: process.env.OPENROUTER_API_KEY || "",
+  apiKey: process.env.OPENROUTER_API_KEY || "",
 });
 
-export const chatWithArena = async (req: Request, res: Response) => {
-    try {
-        const { messages, problemContext, userCode, language } = req.body;
+export const chatWithArena = catchAsync(async (req: Request, res: Response) => {
+  const { messages, problemContext, userCode, language } = req.body;
 
-        if (!messages || !Array.isArray(messages)) {
-            return res.status(400).json({
-                success: false,
-                message: "Messages are required and must be an array.",
-            });
-        }
+  if (!messages || !Array.isArray(messages)) {
+    return res.status(400).json({
+      success: false,
+      message: "Messages are required and must be an array.",
+    });
+  }
 
-
-        const systemMessage = {
-            role: "system",
-            content: `You are Arena, a helpful AI coding assistant on CodeCraft. 
+  const systemMessage = {
+    role: "system",
+    content: `You are Arena, a helpful AI coding assistant on CodeCraft. 
       Your goal is to help users solve coding problems by providing hints, identifying bugs, and explaining logic. 
       Do not give the full solution immediately unless asked. 
       Encourage the user to think through the problem.
@@ -39,46 +38,35 @@ export const chatWithArena = async (req: Request, res: Response) => {
       ${userCode || "// No code written yet"}
       \`\`\`
       `,
-        };
+  };
 
-        const fullMessages = [systemMessage, ...messages];
+  const fullMessages = [systemMessage, ...messages];
 
-        // Set headers for streaming
-        res.setHeader("Content-Type", "text/event-stream");
-        res.setHeader("Cache-Control", "no-cache");
-        res.setHeader("Connection", "keep-alive");
+  // Set headers for streaming
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
 
-        
-        const stream = await openrouter.chat.send({
-            model: "meta-llama/llama-3.3-70b-instruct:free",
-            messages: fullMessages,
-            stream: true,
-        });
+  const stream = await openrouter.chat.send({
+    model: "meta-llama/llama-3.3-70b-instruct:free",
+    messages: fullMessages,
+    stream: true,
+  });
 
-        try {
-            for await (const chunk of stream) {
-                const content = chunk.choices?.[0]?.delta?.content;
-                if (content) {
-                    res.write(`data: ${JSON.stringify({ content })}\n\n`);
-                }
-            }
-        } catch (streamError: any) {
-            console.error("Error during streaming:", streamError);
-            res.write(`data: ${JSON.stringify({ error: "Stream error: " + streamError.message })}\n\n`);
-        }
-
-        res.write("data: [DONE]\n\n");
-        res.end();
-    } catch (error: any) {
-        console.error("Detailed Error in Arena chat:", error);
-        if (!res.headersSent) {
-            return res.status(500).json({
-                success: false,
-                message: "Failed to communicate with AI assistant.",
-                error: error.message,
-            });
-        }
-        res.write(`data: ${JSON.stringify({ error: "Stream interrupted" })}\n\n`);
-        res.end();
+  try {
+    for await (const chunk of stream) {
+      const content = chunk.choices?.[0]?.delta?.content;
+      if (content) {
+        res.write(`data: ${JSON.stringify({ content })}\n\n`);
+      }
     }
-};
+  } catch (streamError: any) {
+    logger.error("Error during streaming:", streamError);
+    res.write(
+      `data: ${JSON.stringify({ error: "Stream error: " + streamError.message })}\n\n`,
+    );
+  }
+
+  res.write("data: [DONE]\n\n");
+  res.end();
+});

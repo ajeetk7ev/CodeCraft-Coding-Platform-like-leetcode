@@ -3,10 +3,13 @@ import './index.css'
 import App from './App.tsx'
 import { BrowserRouter } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast';
+import ErrorBoundary from './components/common/ErrorBoundary.tsx';
 
 createRoot(document.getElementById('root')!).render(
   <BrowserRouter>
-   <Toaster/>
-   <App />
+   <ErrorBoundary>
+    <Toaster/>
+    <App />
+   </ErrorBoundary>
   </BrowserRouter>
 )

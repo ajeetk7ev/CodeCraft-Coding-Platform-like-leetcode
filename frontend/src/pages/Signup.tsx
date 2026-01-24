@@ -73,7 +73,7 @@ export default function Signup() {
     } else {
       toast.success(res.message || "Signup Successfully");
       setForm({ fullName: "", username: "", email: "", password: "" });
-      navigate("/");
+      navigate("/login");
     }
   }
 

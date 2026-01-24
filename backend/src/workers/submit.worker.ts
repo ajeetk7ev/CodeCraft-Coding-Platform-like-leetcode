@@ -3,7 +3,11 @@ import { redis } from "../config/redis";
 import Submission from "../models/submission/Submission";
 import { ProblemTestcase } from "../models/problem/ProblemTestcase";
 import { ProblemStats } from "../models/problem/ProblemStats";
-import { submitToJudge0, pollJudge0Result, mapJudge0StatusToVerdict } from "../utils/judge0_self";
+import {
+  submitToJudge0,
+  pollJudge0Result,
+  mapJudge0StatusToVerdict,
+} from "../utils/judge0_self";
 import { SupportedLanguage } from "../models/submission/Language";
 import { Verdict } from "../models/submission/verdict";
 import { SubmissionStatus } from "../models/submission/SubmissionStatus";
@@ -11,6 +15,10 @@ import { Stats } from "../models/user/Stats";
 import { RecentSubmission } from "../models/user/RecentSubmission";
 import { Problem } from "../models/problem/Problem";
 import { updateUserStreak } from "../utils/streak.utils";
+import { getIO } from "../config/socket";
+import { Contest } from "../models/contest/Contest";
+import { ContestParticipant } from "../models/contest/ContestParticipant";
+import { logger } from "../utils/logger";
 
 interface SubmitJobData {
   submissionId: string;
@@ -58,7 +66,7 @@ export const submitWorker = new Worker<SubmitJobData, void>(
             testcase.input,
             testcase.output,
             2, // cpuTimeLimit
-            128000 // memoryLimit
+            128000, // memoryLimit
           );
 
           // Poll for result
@@ -80,7 +88,8 @@ export const submitWorker = new Worker<SubmitJobData, void>(
           testcaseResults.push({
             input: testcase.isHidden ? undefined : testcase.input,
             expectedOutput: testcase.isHidden ? undefined : testcase.output,
-            userOutput: result.stdout || result.stderr || result.compile_output || null,
+            userOutput:
+              result.stdout || result.stderr || result.compile_output || null,
             passed,
             runtime,
             memory,
@@ -90,11 +99,12 @@ export const submitWorker = new Worker<SubmitJobData, void>(
           if (!passed) {
             shouldContinue = false;
             finalVerdict = verdict; // WA, TLE, MLE, RE, etc.
-            console.log(`⚠️ Test case ${i + 1} failed with verdict: ${verdict}. Stopping execution.`);
+            logger.info(
+              `⚠️ Test case ${i + 1} failed with verdict: ${verdict}. Stopping execution.`,
+            );
           }
-
         } catch (error: any) {
-          console.error(`Error processing testcase ${i + 1}:`, error);
+          logger.error(`Error processing testcase ${i + 1}:`, error);
           shouldContinue = false;
           finalVerdict = Verdict.INTERNAL_ERROR;
           executedCount++;
@@ -137,7 +147,7 @@ export const submitWorker = new Worker<SubmitJobData, void>(
           const existingRecentSubmission = await RecentSubmission.findOne({
             user: userId,
             problem: problemId,
-            status: 'Accepted'
+            status: "Accepted",
           });
 
           // Only update solve counts if this is the first time solving this problem
@@ -147,10 +157,10 @@ export const submitWorker = new Worker<SubmitJobData, void>(
               {
                 $inc: {
                   totalSolved: 1,
-                  [problemDifficulty + 'Solved']: 1
-                }
+                  [problemDifficulty + "Solved"]: 1,
+                },
               },
-              { new: true, upsert: true }
+              { new: true, upsert: true },
             );
           }
 
@@ -161,11 +171,119 @@ export const submitWorker = new Worker<SubmitJobData, void>(
           await RecentSubmission.findOneAndUpdate(
             { user: userId, problem: problemId },
             {
-              status: 'Accepted',
-              submittedAt: new Date()
+              status: "Accepted",
+              submittedAt: new Date(),
             },
-            { upsert: true, new: true }
+            { upsert: true, new: true },
           );
+        }
+
+        // Contest handling
+        if (submission.contest) {
+          logger.info(
+            `Processing contest submission: contestId=${submission.contest}, userId=${submission.user}, verdict=${finalVerdict}`,
+          );
+          const participant = await ContestParticipant.findOne({
+            user: submission.user,
+            contest: submission.contest,
+          });
+
+          const contest = await Contest.findById(submission.contest);
+
+          if (contest && participant) {
+            const alreadySolved = participant.solvedProblems.some(
+              (p) => String(p) === String(submission.problem),
+            );
+
+            if (finalVerdict === Verdict.ACCEPTED) {
+              if (!alreadySolved) {
+                participant.solvedProblems.push(submission.problem as any);
+
+                const problem = await Problem.findById(submission.problem);
+                // 1. Difficulty-based points
+                const pointsMap: Record<string, number> = {
+                  easy: 100,
+                  medium: 200,
+                  hard: 300,
+                };
+                const scoreToAdd =
+                  (problem && pointsMap[problem.difficulty]) || 100;
+                participant.score += scoreToAdd;
+
+                // 2. Penalty calculation
+                const contestStart =
+                  participant.isVirtual && participant.virtualStartTime
+                    ? new Date(participant.virtualStartTime)
+                    : new Date(contest.startTime);
+
+                const solveTime = new Date(submission.createdAt);
+                const diffMinutes = Math.floor(
+                  (solveTime.getTime() - contestStart.getTime()) / (1000 * 60),
+                );
+
+                // Find failed attempts for this problem before this AC
+                const attemptInfo = participant.attempts.find(
+                  (a) => String(a.problem) === String(submission.problem),
+                );
+                const failedAttemptsCount = attemptInfo
+                  ? attemptInfo.failedCount
+                  : 0;
+
+                // Penalty = time to solve (minutes) + 5 minutes for each wrong submission
+                participant.penalty +=
+                  Math.max(0, diffMinutes) + failedAttemptsCount * 5;
+
+                participant.lastSolvedAt = solveTime;
+                await participant.save();
+
+                // Update user's global contest points in Stats
+                await Stats.findOneAndUpdate(
+                  { user: submission.user },
+                  { $inc: { contestPoints: scoreToAdd } },
+                  { upsert: true },
+                );
+              }
+            } else if (
+              finalVerdict !== Verdict.COMPILE_ERROR &&
+              !alreadySolved
+            ) {
+              // Track failed attempts (excluding compile errors, as per standard CP)
+              let attemptInfo = participant.attempts.find(
+                (a) => String(a.problem) === String(submission.problem),
+              );
+              if (attemptInfo) {
+                attemptInfo.failedCount += 1;
+              } else {
+                participant.attempts.push({
+                  problem: submission.problem as any,
+                  failedCount: 1,
+                });
+              }
+              await participant.save();
+            }
+
+            // 3. Throttled Broadcast update
+            const io = getIO();
+            if (io) {
+              const cooldownKey = `leaderboard_cooldown_${submission.contest}`;
+              const isOnCooldown = await redis.get(cooldownKey);
+
+              if (!isOnCooldown) {
+                const leaderboard = await ContestParticipant.find({
+                  contest: submission.contest,
+                })
+                  .populate("user", "username avatar rating")
+                  .sort({ score: -1, penalty: 1, lastSolvedAt: 1 })
+                  .limit(100);
+
+                io.to(`contest_${submission.contest}`).emit(
+                  "leaderboard_update",
+                  leaderboard,
+                );
+                await redis.set(cooldownKey, "true", "EX", 5);
+              }
+            }
+          }
         }
       }
 
@@ -188,9 +306,11 @@ export const submitWorker = new Worker<SubmitJobData, void>(
         await stats.save();
       }
 
-      console.log(`Submission ${submissionId} completed with verdict: ${finalVerdict}`);
+      logger.info(
+        `Submission ${submissionId} completed with verdict: ${finalVerdict}`,
+      );
     } catch (error: any) {
-      console.error(`Error processing submit job ${job.id}:`, error);
+      logger.error(`Error processing submit job ${job.id}:`, error);
 
       // Update submission status to FAILED
       await Submission.findByIdAndUpdate(submissionId, {
@@ -204,21 +324,21 @@ export const submitWorker = new Worker<SubmitJobData, void>(
   {
     connection: redis,
     concurrency: 1,
-  }
+  },
 );
 
 submitWorker.on("ready", () => {
-  console.log("🚀 Submit worker is ready");
+  logger.info("🚀 Submit worker is ready");
 });
 
 submitWorker.on("error", (err) => {
-  console.error("❌ Submit worker error:", err);
+  logger.error("❌ Submit worker error:", err);
 });
 
 submitWorker.on("completed", (job) => {
-  console.log(`Submit job ${job.id} completed`);
+  logger.info(`Submit job ${job.id} completed`);
 });
 
 submitWorker.on("failed", (job, err) => {
-  console.error(`Submit job ${job?.id} failed:`, err);
+  logger.error(`Submit job ${job?.id} failed:`, err);
 });

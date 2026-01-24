@@ -14,6 +14,13 @@ export interface User {
   role: "user" | "admin";
   currentStreak?: number;
   longestStreak?: number;
+  contestPoints?: number;
+  rating?: number;
+  ratingHistory?: {
+    rating: number;
+    date: Date;
+    contestId?: string;
+  }[];
 }
 
 export interface UserStats {

@@ -44,13 +44,15 @@ export default function Login() {
       if (res.message) {
         toast.error(res.message);
       }
-      // Zod field errors
+      // Zod field errors (if any)
       if (res.errors) {
         const fieldErrors = res.errors;
         setErrors({
           email: fieldErrors.email?.[0],
           password: fieldErrors.password?.[0],
         });
+      } else if (!res.message) {
+        toast.error("Invalid credentials.");
       }
     } else {
       toast.success(res.message || "Login Successful");

@@ -13,6 +13,8 @@ export interface IUser extends Document {
   bio?: string;
 
   role: "user" | "admin";
+  rating: number;
+  lastActivityDate: Date;
   banned: boolean;
 
   emailVerified: boolean;
@@ -24,6 +26,12 @@ export interface IUser extends Document {
   currentStreak: number;
   longestStreak: number;
   lastActivity?: Date;
+
+  ratingHistory?: {
+    rating: number;
+    date: Date;
+    contestId?: any;
+  }[];
 }
 
 const userSchema = new Schema<IUser>(
@@ -43,10 +51,11 @@ const userSchema = new Schema<IUser>(
     github: String,
     linkedin: String,
     avatar: { type: String, default: "" },
-    bio: { type: String, default: "" },
-
+    bio: { type: String, default: "" }, // Kept this line
     role: { type: String, enum: ["user", "admin"], default: "user" },
-    banned: { type: Boolean, default: false },
+    rating: { type: Number, default: 1500 }, // Added this line
+    lastActivityDate: { type: Date, default: Date.now }, // Added this line
+    banned: { type: Boolean, default: false }, // Kept this line
 
     emailVerified: { type: Boolean, default: false },
     verificationToken: String,
@@ -57,6 +66,12 @@ const userSchema = new Schema<IUser>(
     currentStreak: { type: Number, default: 0 },
     longestStreak: { type: Number, default: 0 },
     lastActivity: Date,
+
+    ratingHistory: [{
+      rating: { type: Number, required: true },
+      date: { type: Date, default: Date.now },
+      contestId: { type: Schema.Types.ObjectId, ref: "Contest" },
+    }],
   },
   { timestamps: true }
 );

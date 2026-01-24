@@ -1,94 +1,87 @@
-import { Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
+import { catchAsync } from "../utils/catchAsync";
 import bcrypt from "bcryptjs";
 import { User } from "../models/user/User";
 import { signupSchema, loginSchema } from "../validations/auth.schema";
 import { generateToken } from "../utils/generateToken";
 import { checkAndResetStreak } from "../utils/streak.utils";
+import { AppError } from "../utils/AppError";
 
-
-export const signup = async (req: Request, res: Response) => {
-  try {
+export const signup = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
     const parsed = signupSchema.safeParse(req.body);
     if (!parsed.success) {
-      return res
-        .status(400)
-        .json({ success: false, errors: parsed.error.flatten().fieldErrors });
+      return next(
+        new AppError("Invalid identification parameters provided.", 400),
+      );
     }
 
     const { fullName, username, email, password } = parsed.data;
 
     const existingUser = await User.findOne({ $or: [{ email }, { username }] });
     if (existingUser) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Email or Username already exists" });
+      return next(
+        new AppError(
+          "Identity conflict: email or username already indexed in the grid.",
+          400,
+        ),
+      );
     }
 
     const hashedPass = await bcrypt.hash(password, 10);
 
-    const user = await User.create({
+    await User.create({
       fullName,
       username,
       email,
       password: hashedPass,
     });
 
-    const token = generateToken(user._id);
-
     return res.status(201).json({
       success: true,
-      message: "Signup successful",
-      user: {
-        id: user._id,
-        username: user.username,
-        fullName: user.fullName,
-        email: user.email,
-        avatar: user.avatar,
-        role: user.role,
-        currentStreak: user.currentStreak,
-        longestStreak: user.longestStreak,
-        gender: user.gender,
-        bio: user.bio,
-        github: user.github,
-        linkedin: user.linkedin,
-      },
-      token,
+      message:
+        "Identity verified and indexed. Access protocol initialized: Please finalize via login.",
     });
-  } catch (error) {
-    console.log("Error in signup", error);
-    return res.status(500).json({ success: false, message: "Server error" });
-  }
-};
+  },
+);
 
-
-
-export const login = async (req: Request, res: Response) => {
-  try {
+export const login = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
     const parsed = loginSchema.safeParse(req.body);
     if (!parsed.success) {
-      return res
-        .status(400)
-        .json({ success: false, errors: parsed.error.flatten().fieldErrors });
+      return next(
+        new AppError("Invalid identification parameters provided.", 400),
+      );
     }
 
     const { email, password } = parsed.data;
 
     const user = await User.findOne({ email });
-    if (!user) return res.status(404).json({ success: false, message: "User not found" });
+    if (!user)
+      return next(
+        new AppError("Access denied: Identity not found in the grid.", 404),
+      );
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch)
-      return res.status(400).json({ success: false, message: "Invalid credentials" });
+      return next(
+        new AppError(
+          "Authentication failed: Invalid credentials protocol.",
+          401,
+        ),
+      );
 
     // Check and Reset user streak if day missed
-    const checkResult = await checkAndResetStreak((user._id as string).toString());
+    const checkResult = await checkAndResetStreak(
+      (user._id as string).toString(),
+    );
     const updatedUser = checkResult || user;
 
     const token = generateToken(user._id);
 
     return res.json({
       success: true,
-      message: "Login successful",
+      message: "Authentication successful. Access granted.",
       user: {
         id: updatedUser._id,
         username: updatedUser.username,
@@ -105,8 +98,5 @@ export const login = async (req: Request, res: Response) => {
       },
       token,
     });
-  } catch (error) {
-    console.log("Error in login", error);
-    return res.status(500).json({ success: false, message: "Server error" });
-  }
-};
+  },
+);

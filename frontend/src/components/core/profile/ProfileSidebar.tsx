@@ -46,6 +46,11 @@ export default function ProfileSidebar() {
             <p className="text-indigo-400 font-bold uppercase tracking-widest text-[10px]">
               @{user.username}
             </p>
+            <div className="flex items-center justify-center gap-2 mt-2">
+              <span className="px-3 py-0.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-[10px] font-black uppercase tracking-widest">
+                Rating: {user.rating || 1500}
+              </span>
+            </div>
           </div>
 
           <p className="text-slate-400 text-sm leading-relaxed mb-8 px-2">

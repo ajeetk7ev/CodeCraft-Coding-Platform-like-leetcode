@@ -2,7 +2,7 @@ import { z } from "zod";
 import { SupportedLanguage } from "../models/submission/Language";
 
 export const runCodeSchema = z.object({
-  slug:z.string("slug is required"),
+  slug: z.string("slug is required"),
   code: z.string().min(1, "Code is required"),
 
   language: z.nativeEnum(SupportedLanguage),
@@ -25,4 +25,5 @@ export const submitCodeSchema = z.object({
   ),
 
   problemId: z.string().min(1, "Problem ID is required"),
+  contestId: z.string().optional(),
 });

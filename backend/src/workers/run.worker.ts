@@ -1,7 +1,12 @@
 import { Worker, Job } from "bullmq";
 import { redis } from "../config/redis";
-import { submitBatchToJudge0, pollBatchJudge0Results, mapJudge0StatusToVerdict } from "../utils/judge0_self";
+import {
+  submitBatchToJudge0,
+  pollBatchJudge0Results,
+  mapJudge0StatusToVerdict,
+} from "../utils/judge0_self";
 import { SupportedLanguage } from "../models/submission/Language";
+import { logger } from "../utils/logger";
 
 interface RunTestcase {
   stdin: string;
@@ -33,19 +38,20 @@ interface RunJobResult {
   results: SingleTestcaseResult[];
 }
 
-
 export const runWorker = new Worker<RunJobData, RunJobResult>(
   "code-run",
   async (job) => {
     const { code, language, testcases } = job.data;
 
     try {
-      const submissions = testcases.filter(tc => !!tc).map(tc => ({
-        code,
-        language,
-        stdin: tc.stdin,
-        expectedOutput: tc.expectedOutput
-      }));
+      const submissions = testcases
+        .filter((tc) => !!tc)
+        .map((tc) => ({
+          code,
+          language,
+          stdin: tc.stdin,
+          expectedOutput: tc.expectedOutput,
+        }));
 
       if (submissions.length === 0) {
         return {
@@ -95,29 +101,28 @@ export const runWorker = new Worker<RunJobData, RunJobResult>(
         results,
       };
     } catch (error) {
-      console.error(`Error processing run job ${job.id}:`, error);
+      logger.error(`Error processing run job ${job.id}:`, error);
       throw error;
     }
   },
   {
     connection: redis,
     concurrency: 1,
-  }
+  },
 );
 
-
 runWorker.on("ready", () => {
-  console.log("🚀 Run worker is ready");
+  logger.info("🚀 Run worker is ready");
 });
 
 runWorker.on("error", (err) => {
-  console.error("❌ Run worker error:", err);
+  logger.error("❌ Run worker error:", err);
 });
 
 runWorker.on("completed", (job) => {
-  console.log(`Run job ${job.id} completed`);
+  logger.info(`Run job ${job.id} completed`);
 });
 
 runWorker.on("failed", (job, err) => {
-  console.error(`Run job ${job?.id} failed:`, err);
+  logger.error(`Run job ${job?.id} failed:`, err);
 });
