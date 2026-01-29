@@ -7,7 +7,7 @@ import {
   submitToJudge0,
   pollJudge0Result,
   mapJudge0StatusToVerdict,
-} from "../utils/judge0_self";
+} from "../utils/judge0";
 import { SupportedLanguage } from "../models/submission/Language";
 import { Verdict } from "../models/submission/verdict";
 import { SubmissionStatus } from "../models/submission/SubmissionStatus";

@@ -21,6 +21,7 @@ import Discuss from "./pages/Discuss";
 import NewDiscussion from "./pages/NewDiscussion";
 import EditDiscussion from "./pages/EditDiscussion";
 import DiscussionDetail from "./pages/DiscussionDetail";
+import AuthSuccess from "./pages/AuthSuccess";
 import { useAuthStore } from "./stores/authStore";
 import ProtectedRoute from "./components/routing/ProtectedRoute";
 import PublicRoute from "./components/routing/PublicRoute";
@@ -72,6 +73,7 @@ function App() {
             </PublicRoute>
           }
         />
+        <Route path="/auth-success" element={<AuthSuccess />} />
 
         {/* Protected Routes - Require authentication */}
         <Route

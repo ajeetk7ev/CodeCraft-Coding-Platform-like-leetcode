@@ -4,7 +4,8 @@ export interface IUser extends Document {
   username: string;
   fullName: string;
   email: string;
-  password: string;
+  password?: string;
+  googleId?: string;
 
   gender?: "male" | "female" | "other";
   github?: string;
@@ -45,9 +46,19 @@ const userSchema = new Schema<IUser>(
     },
     fullName: { type: String, required: true, trim: true },
     email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
+    password: {
+      type: String,
+      required: function (this: any) {
+        return !this.googleId;
+      },
+    },
+    googleId: { type: String, unique: true, sparse: true },
 
-    gender: { type: String, enum: ["male", "female", "other"], default: "other" },
+    gender: {
+      type: String,
+      enum: ["male", "female", "other"],
+      default: "other",
+    },
     github: String,
     linkedin: String,
     avatar: { type: String, default: "" },
@@ -67,14 +78,15 @@ const userSchema = new Schema<IUser>(
     longestStreak: { type: Number, default: 0 },
     lastActivity: Date,
 
-    ratingHistory: [{
-      rating: { type: Number, required: true },
-      date: { type: Date, default: Date.now },
-      contestId: { type: Schema.Types.ObjectId, ref: "Contest" },
-    }],
+    ratingHistory: [
+      {
+        rating: { type: Number, required: true },
+        date: { type: Date, default: Date.now },
+        contestId: { type: Schema.Types.ObjectId, ref: "Contest" },
+      },
+    ],
   },
-  { timestamps: true }
+  { timestamps: true },
 );
-
 
 export const User = mongoose.model<IUser>("User", userSchema);

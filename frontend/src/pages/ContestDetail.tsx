@@ -56,7 +56,7 @@ const ContestDetail: React.FC = () => {
     const [activeTab, setActiveTab] = useState<"challenges" | "leaderboard" | "submissions">("challenges");
     const [loading, setLoading] = useState(true);
     const [timeLeft, setTimeLeft] = useState("");
-    const [isEnded, setIsEnded] = useState(false);
+    const [_, setIsEnded] = useState(false);
 
     const { token } = useAuthStore();
 

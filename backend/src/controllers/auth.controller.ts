@@ -62,6 +62,15 @@ export const login = catchAsync(
         new AppError("Access denied: Identity not found in the grid.", 404),
       );
 
+    if (!user.password) {
+      return next(
+        new AppError(
+          "Authentication failed: This account is associated with a social login. Please login with Google.",
+          401,
+        ),
+      );
+    }
+
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch)
       return next(
@@ -98,5 +107,20 @@ export const login = catchAsync(
       },
       token,
     });
+  },
+);
+
+export const googleCallback = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const user = req.user as any;
+    if (!user) {
+      return next(new AppError("Authentication failed", 401));
+    }
+
+    const token = generateToken(user._id);
+
+    // Redirect to frontend with token
+    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+    res.redirect(`${frontendUrl}/auth-success?token=${token}`);
   },
 );

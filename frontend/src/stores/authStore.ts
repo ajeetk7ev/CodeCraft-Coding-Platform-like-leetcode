@@ -31,6 +31,7 @@ interface AuthState {
   loadUser: () => void;
   logout: () => void;
   setUser: (user: User) => void;
+  setToken: (token: string) => void;
   fetchUser: () => Promise<void>;
 }
 
@@ -47,6 +48,12 @@ export const useAuthStore = create<AuthState>((set) => ({
   setUser: (user: User) => {
     setToLocalStorage("user", user);
     set({ user });
+  },
+
+  setToken: (token: string) => {
+    setToLocalStorage("token", token);
+    axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+    set({ token });
   },
 
   // ================= SIGNUP =================

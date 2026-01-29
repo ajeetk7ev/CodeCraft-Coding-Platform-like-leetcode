@@ -5,7 +5,7 @@ import { logger } from "./utils/logger";
 // 1. Uncaught Exception Handler
 process.on("uncaughtException", (err) => {
   logger.error("UNCAUGHT EXCEPTION! ✨ Shutting down...");
-  logger.error(err.name, err.message);
+  logger.error(err);
   process.exit(1);
 });
 
@@ -14,6 +14,8 @@ import cors from "cors";
 import { createServer } from "http";
 import { initSocket } from "./config/socket";
 import { dbConnect } from "./config/db";
+import passport from "passport";
+import "./config/passport";
 import authRoutes from "./routes/auth.routes";
 import problemRoutes from "./routes/problem.routes";
 import submissionRoutes from "./routes/submission.routes";
@@ -41,6 +43,7 @@ logger.info(`PORT: ${PORT}`);
 
 app.use(express.json());
 app.use(cors());
+app.use(passport.initialize());
 
 // 1. Security Headers
 app.use(helmet());
@@ -81,7 +84,7 @@ const server = httpServer.listen(PORT, async () => {
 // 2. Unhandled Rejection Handler
 process.on("unhandledRejection", (err: any) => {
   logger.error("UNHANDLED REJECTION! ✨ Shutting down...");
-  logger.error(err.name, err.message);
+  logger.error(err);
   server.close(() => {
     process.exit(1);
   });
