@@ -125,9 +125,9 @@ export const updateProfile = catchAsync(async (req: Request, res: Response) => {
 
   if ((req as any).file) {
     const file = (req as any).file;
-    logger.info(`File object: ${JSON.stringify(file)}`);
-    logger.info(`File path: ${file.path}`);
-    logger.info(`File buffer: ${!!file.buffer}`);
+    // logger.info(`File object: ${JSON.stringify(file)}`);
+    // logger.info(`File path: ${file.path}`);
+    // logger.info(`File buffer: ${!!file.buffer}`);
     try {
       const result = await uploadImageToCloudinary(file, "avatars");
       avatarUrl = result.secure_url;
