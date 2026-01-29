@@ -114,8 +114,8 @@ graph TD
 1. **Clone the Repository**
 
    ```bash
-   git clone https://github.com/ajeetk7ev/CodeCraft-Coding-Platform-like-leetcode.git
-   cd CodeCraft-Coding-Platform-like-leetcode
+   git clone https://github.com/ajeetk7ev/CodeArena.git
+   cd CodeArena
    ```
 
 2. **Environment Setup**
@@ -124,8 +124,8 @@ graph TD
 3. **Install Dependencies**
 
    ```bash
-   # Install Root, Backend and Frontend deps
-   npm install && cd backend && npm install && cd ../frontend && npm install
+   # Install Backend and Frontend deps
+   cd backend && npm install && cd ../frontend && npm install
    ```
 
 4. **Run Locally**
