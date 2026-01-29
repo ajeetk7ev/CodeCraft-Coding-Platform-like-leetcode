@@ -8,6 +8,7 @@ const sendErrorDev = (err: any, res: Response) => {
     error: err,
     message: err.message,
     stack: err.stack,
+    ...(err.errors && { errors: err.errors }),
   });
 };
 
@@ -17,6 +18,7 @@ const sendErrorProd = (err: any, res: Response) => {
     res.status(err.statusCode).json({
       status: err.status,
       message: err.message,
+      ...(err.errors && { errors: err.errors }),
     });
   }
   // Programming or other unknown error: don't leak error details

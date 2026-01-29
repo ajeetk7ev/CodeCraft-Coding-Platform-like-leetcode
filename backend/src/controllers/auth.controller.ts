@@ -12,7 +12,11 @@ export const signup = catchAsync(
     const parsed = signupSchema.safeParse(req.body);
     if (!parsed.success) {
       return next(
-        new AppError("Invalid identification parameters provided.", 400),
+        new AppError(
+          "Invalid identification parameters provided.",
+          400,
+          parsed.error.flatten().fieldErrors,
+        ),
       );
     }
 
@@ -20,12 +24,7 @@ export const signup = catchAsync(
 
     const existingUser = await User.findOne({ $or: [{ email }, { username }] });
     if (existingUser) {
-      return next(
-        new AppError(
-          "Identity conflict: email or username already indexed in the grid.",
-          400,
-        ),
-      );
+      return next(new AppError("Email or Username already exists.", 400));
     }
 
     const hashedPass = await bcrypt.hash(password, 10);
@@ -39,8 +38,7 @@ export const signup = catchAsync(
 
     return res.status(201).json({
       success: true,
-      message:
-        "Identity verified and indexed. Access protocol initialized: Please finalize via login.",
+      message: "Account created successfully. Please login.",
     });
   },
 );
@@ -50,7 +48,11 @@ export const login = catchAsync(
     const parsed = loginSchema.safeParse(req.body);
     if (!parsed.success) {
       return next(
-        new AppError("Invalid identification parameters provided.", 400),
+        new AppError(
+          "All fields are required",
+          400,
+          parsed.error.flatten().fieldErrors,
+        ),
       );
     }
 
@@ -58,26 +60,18 @@ export const login = catchAsync(
 
     const user = await User.findOne({ email });
     if (!user)
-      return next(
-        new AppError("Access denied: Identity not found in the grid.", 404),
-      );
+      return next(new AppError("Access denied: Identity not found", 404));
 
     if (!user.password) {
       return next(
-        new AppError(
-          "Authentication failed: This account is associated with a social login. Please login with Google.",
-          401,
-        ),
+        new AppError("Authentication failed:  Please login with Google.", 401),
       );
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch)
       return next(
-        new AppError(
-          "Authentication failed: Invalid credentials protocol.",
-          401,
-        ),
+        new AppError("Authentication failed: Invalid credentials.", 401),
       );
 
     // Check and Reset user streak if day missed
